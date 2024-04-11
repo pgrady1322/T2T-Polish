@@ -24,7 +24,10 @@ in [McCartney et al, 2021](https://doi.org/10.1101/2021.07.02.450803). In this v
 * [BCFtools](https://github.com/samtools/bcftools)
 
 
-## How to run
+## How to run (Quick Start)
+
+Allocate a fairly large amount of RAM relative to the size of your read set. The Racon step requires the loading of all reads into memory. For instance, a Revio flow cell (~100Gb) requires approximately 400Gb of RAM on a mammalian genome.
+
 ```
 automated-polishing.sh <num_threads> <num_iterations> <in_draft_fasta> <in_reads> <in_readmers> <out_prefix>
 
@@ -49,3 +52,15 @@ This script automatically launches Winnowmap2 to align a read set of choice, the
 A dedicated conda environment is highly recommended. A YML file is available in this repo. Otherwise, install each package independently (or load them on a SLURM-like cluster environment, etc). Note that using package managers for the installation of Racon will lead to a pipeline error with an error code of 'invalid option -L'. Racon must be installed from the following Git repo: https://github.com/pgrady/racon
 
 ### Conda installation
+
+
+### Installation of Specialized Racon (required for all installation modes)
+
+Use these directions to build into a conda environment for the T2T Automated pipeline.
+
+```bash
+git clone --recursive [https://github.com/pgrady1322/racon.git] racon
+cd racon
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make
+```
