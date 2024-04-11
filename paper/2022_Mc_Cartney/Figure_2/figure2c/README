@@ -1,5 +1,0 @@
-Generate figure 2c by running:
-
-python3 homopolymer_heatmap_ILM.py
-
-python3 homopolymer_heatmap_CCS.py
