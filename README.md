@@ -59,7 +59,7 @@ A dedicated conda environment is highly recommended. A YML file is available in 
 Use these directions to build into a conda environment for the T2T Automated pipeline.
 
 ```bash
-git clone --recursive [https://github.com/pgrady1322/racon.git] racon
+git clone --recursive https://github.com/pgrady1322/racon.git racon
 cd racon
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make
