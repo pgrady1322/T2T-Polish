@@ -61,3 +61,4 @@ dependencies:
       - tzdata==2023.3
       - vbz-h5py-plugin==1.0.1
       - git+https://github.com/dehui333/Porechop.git
+      - git+https://github.com/pgrady1322/racon.git
