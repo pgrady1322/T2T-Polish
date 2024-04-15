@@ -17,7 +17,7 @@ in [McCartney et al, 2021](https://doi.org/10.1101/2021.07.02.450803). In this v
 ## Dependencies 
 * [Winnowmap2](https://github.com/marbl/Winnowmap)
 * [Falconc available in pbipa package](https://github.com/bio-nim/pb-falconc/releases)
-* [Racon (liftover branch)](https://github.com/pgrady/racon)
+* [Racon (liftover branch)](https://github.com/pgrady1322/racon)
 * [Meryl v1.3](https://github.com/marbl/meryl)
 * [Merfin v1.0](https://github.com/arangrhie/merfin)
 * [Samtools](https://github.com/samtools/samtools)
