@@ -53,10 +53,17 @@ A dedicated conda environment is highly recommended. A YML file is available in 
 
 ### Conda installation
 
+Use these directions to build into a conda environment for the T2T Automated pipeline with the Conda YML in this Git repo.
 
-### Installation of Specialized Racon (required for all installation modes)
+```bash
+conda env create -n herro -f herro-env.yml
+```
 
-Use these directions to build into a conda environment for the T2T Automated pipeline.
+Confirm that the modified version of Racon is installed by calling `racon -h` and checking for the `-L` flag in the options.
+
+### Self Installation / Installation of Specialized Racon
+
+If you are performing a self install of all dependencies or already have them loaded on a HPC, the modified version of Racon must still be installed. All other dependencies can be from default repositories.
 
 ```bash
 git clone --recursive https://github.com/pgrady1322/racon.git racon
