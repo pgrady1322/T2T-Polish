@@ -49,7 +49,7 @@ This script automatically launches Winnowmap2 to align a read set of choice, the
 
 ## Installation
 
-A dedicated conda environment is highly recommended. A YML file is available in this repo. Otherwise, install each package independently (or load them on a SLURM-like cluster environment, etc). Note that using package managers for the installation of Racon will lead to a pipeline error with an error code of 'invalid option -L'. Racon must be installed from the following Git repo: https://github.com/pgrady/racon
+A dedicated conda environment is highly recommended. A YML file is available in this repo. Otherwise, install each package independently (or load them on a SLURM-like cluster environment, etc). Note that using package managers for the installation of Racon will lead to a pipeline error with an error code of 'invalid option -L'. Racon must be installed from the following Git repo: https://github.com/pgrady1322/racon
 
 ### Conda installation
 
