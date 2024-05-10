@@ -56,7 +56,7 @@ A dedicated conda environment is highly recommended. A YML file is available in 
 Use these directions to build into a conda environment for the T2T Automated pipeline with the Conda YML in this Git repo.
 
 ```bash
-conda env create -n t2t-auto-polisher -f t2tauto.yml
+conda env create -f t2tauto.yml -n t2t-auto-polisher
 ```
 
 Confirm that the modified version of Racon is installed by calling `racon -h` and checking for the `-L` flag in the options.
