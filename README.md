@@ -59,7 +59,7 @@ Use these directions to build into a conda environment for the T2T Automated pip
 conda env create -f t2tauto.yml -n t2t-auto-polisher
 ```
 
-Confirm that the modified version of Racon is installed by calling `racon -h` and checking for the `-L` flag in the options.
+Confirm that the modified version of Racon is installed by calling `racon -h` and checking for the `-L` flag in the options. If it is not, install manually via the steps below.
 
 ### Self Installation / Installation of Specialized Racon
 
