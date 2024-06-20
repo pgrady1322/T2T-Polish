@@ -29,7 +29,7 @@ in [McCartney et al, 2021](https://doi.org/10.1101/2021.07.02.450803). In this v
 Allocate a fairly large amount of RAM relative to the size of your read set. The Racon step requires the loading of all reads into memory. For instance, a Revio flow cell (~100Gb) requires approximately 400Gb of RAM on a mammalian genome.
 
 ```
-automated-polishing.sh <num_threads> <num_iterations> <in_draft_fasta> <in_reads> <in_readmers> <out_prefix>
+automated-polishing.sh <num_threads> <num_iterations> <in_draft_fasta> <in_reads> <in_readmers> <out_prefix> <read_type>
 
   num_threads    Number of threads to use.
   num_iterations Number of polishing iterations to perform.
@@ -37,6 +37,7 @@ automated-polishing.sh <num_threads> <num_iterations> <in_draft_fasta> <in_reads
   in_reads       Path to the input reads file, in FASTA/FASTQ format. Can be gzipped.
   in_readmers    Path to a Meryl database of Illumina k-mers. Can be HiFi k-mers or true duplex k-mers, ONT simplex k-mers are not recommended (early 2024).
   out_prefix     Prefix of the output files. A folder will automatically be created if it does not exist.
+  read_type      pb or ont. Optimize read alignments for PacBio HiFi reads (pb) or ONT reads (ont).
 ```
 
 ## Description
