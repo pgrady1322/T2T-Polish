@@ -16,7 +16,7 @@ if [ "$#" -ne 6 ]; then
     echo "Wrong number of arguments."
     echo ""
     echo "Usage:"
-    echo "  $0 num_threads iterations <in_draft.fasta/fastq> <in_reads.fasta/fastq> <in_readmers> <out_prefix> <pb/ont>"
+    echo "  $0 <num_threads> <iterations> <in_draft.fasta/fastq> <in_reads.fasta/fastq> <in_readmers> <out_prefix> <pb/ont>"
     echo ""
     echo "num_threads - number of threads to use"
     echo "iterations - number of polishing iterations to perform"
