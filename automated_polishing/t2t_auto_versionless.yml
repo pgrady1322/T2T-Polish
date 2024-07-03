@@ -91,7 +91,7 @@ dependencies:
   - pulp
   - pyparsing
   - pysocks
-  - python=3.12
+  - python
   - python-fastjsonschema
   - python_abi
   - pyyaml
