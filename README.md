@@ -38,6 +38,7 @@ automated-polishing.sh <num_threads> <num_iterations> <in_draft_fasta> <in_reads
   in_readmers    Path to a Meryl database of Illumina k-mers. Can be HiFi k-mers or true duplex k-mers, ONT simplex k-mers are not recommended (early 2024).
   out_prefix     Prefix of the output files. A folder will automatically be created if it does not exist.
   read_type      pb or ont. Optimize read alignments for PacBio HiFi reads (pb) or ONT reads (ont).
+  k_mer_size     Meryl database k-mer size. Must match input k-mer readmer size. Recommend k=31.
 ```
 
 ## Description
