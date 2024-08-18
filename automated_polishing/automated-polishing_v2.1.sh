@@ -11,7 +11,7 @@
 
 ### Dependencies: meryl, minimap2, merfin, bcftools, raconL, winnowmap, falconc (pbipa)
 
-if [ "$#" -ne 7 ]; then
+if [ "$#" -ne 8 ]; then
     echo "Automated polishing of draft genomes."
     echo "Wrong number of arguments."
     echo ""
