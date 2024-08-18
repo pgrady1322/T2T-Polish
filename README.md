@@ -26,7 +26,7 @@ in [McCartney et al, 2021](https://doi.org/10.1101/2021.07.02.450803). In this v
 
 ## How to run (Quick Start)
 
-Allocate a fairly large amount of RAM relative to the size of your read set. The Racon step requires the loading of all reads into memory. For instance, a Revio flow cell (~100Gb) requires approximately 400Gb of RAM on a mammalian genome.
+Allocate a fairly large amount of RAM relative to the size of your read set. The Racon step requires the loading of all reads into memory. For instance, a Revio flow cell (~100Gb) requires approximately 400Gb of RAM on a mammalian genome. This pipeline also accepts Herro-corrected ONT reads (use the ONT setting to account for ONT-specific base biases).
 
 ```
 automated-polishing.sh <num_threads> <num_iterations> <in_draft_fasta> <in_reads> <in_readmers> <out_prefix> <read_type>
