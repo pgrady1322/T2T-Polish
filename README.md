@@ -81,6 +81,20 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 ```
 
-### Installation of Specialized Racon
+### Installation of Dependencies (Non-Conda YML)
 
 The remaining dependencies can be installed via pip, conda, or whatever your preferred installation method is (module loaded on an HPC, compiled, etc.). As long as they are on PATH, the auto-polisher will be able to use them.
+
+If strictly necessary, find the dependencies block in the automated_polisher_v#.sh script and modify the values as follows:
+
+```bash
+# Dependencies.
+RACON=racon
+WINNOWMAP=winnowmap
+FALCONC=falconc
+MERYL=meryl
+MERFIN=merfin
+BCFTOOLS=bcftools
+```
+
+Modify the **lowercase** values to whatever the call for that program is on your computing environment. These can be full paths. 
