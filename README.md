@@ -26,7 +26,7 @@ in [McCartney et al, 2021](https://doi.org/10.1101/2021.07.02.450803). In this v
 
 ## How to run (Quick Start)
 
-Allocate a fairly large amount of RAM relative to the size of your read set. The Racon step requires the loading of all reads into memory. For instance, a Revio flow cell (~100Gb) requires approximately 400Gb of RAM on a mammalian genome. This pipeline also accepts Herro-corrected ONT reads (use the ONT setting to account for ONT-specific base biases).
+Allocate a fairly large amount of RAM relative to the size of your read set. The Racon step requires the loading of all reads into memory. For instance, a Revio flow cell (~100Gb) requires approximately 400Gb of RAM on a mammalian genome. This pipeline accepts (**and highly recommends**) Herro-corrected ONT reads (use the ONT setting to account for ONT-specific base biases).
 
 ```
 Automated polishing of draft genomes, version 2.2
@@ -56,12 +56,13 @@ This script automatically launches Winnowmap2 to align a read set of choice, the
 ## Future Roadmap
 
 1) Winnowmap2 will remap based on a new Meryl k-mer db in successive iterations.
+2) GPU support.
 
 ## Installation
 
-A dedicated conda environment is highly recommended. A YML file is available in this repo. Otherwise, install each package independently (or load them on a SLURM-like cluster environment, etc). Note that using package managers for the installation of Racon will lead to a pipeline error with an error code of 'invalid option -L'. Racon must be installed from the following Git repo: https://github.com/pgrady1322/racon, or any available liftover branch from the main Racon repository.
+A dedicated conda environment is highly recommended, but not strictly necessary. A YML file is available in this repo. Otherwise, install each package independently (or load them on a SLURM-like cluster environment, etc). Note that using package managers for the installation of Racon will lead to a pipeline error with an error code of 'invalid option -L'. Racon must be installed from the following Git repo: https://github.com/pgrady1322/racon, or any available liftover branch from the main Racon repository.
 
-### Conda installation
+### Conda Installation of Most Dependencies
 
 Use these directions to build into a conda environment for the T2T Automated pipeline with the Conda YML in this Git repo.
 
@@ -69,9 +70,7 @@ Use these directions to build into a conda environment for the T2T Automated pip
 conda env create -f t2tauto.yml -n t2t-auto-polisher
 ```
 
-Confirm that the modified version of Racon is installed by calling `racon -h` and checking for the `-L` flag in the options. If it is not, install manually via the steps below.
-
-### Self Installation / Installation of Specialized Racon
+### Installation of Specialized Racon
 
 If you are performing a self install of all dependencies or already have them loaded on a HPC, the modified version of Racon must still be installed. All other dependencies can be from default repositories.
 
@@ -81,3 +80,7 @@ cd racon
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 ```
+
+### Installation of Specialized Racon
+
+The remaining dependencies can be installed via pip, conda, or whatever your preferred installation method is (module loaded on an HPC, compiled, etc.). As long as they are on PATH, the auto-polisher will be able to use them.
