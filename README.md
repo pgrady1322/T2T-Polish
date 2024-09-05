@@ -29,16 +29,24 @@ in [McCartney et al, 2021](https://doi.org/10.1101/2021.07.02.450803). In this v
 Allocate a fairly large amount of RAM relative to the size of your read set. The Racon step requires the loading of all reads into memory. For instance, a Revio flow cell (~100Gb) requires approximately 400Gb of RAM on a mammalian genome. This pipeline also accepts Herro-corrected ONT reads (use the ONT setting to account for ONT-specific base biases).
 
 ```
-automated-polishing.sh <num_threads> <num_iterations> <in_draft_fasta> <in_reads> <in_readmers> <out_prefix> <read_type>
+Automated polishing of draft genomes, version 2.2
 
-  num_threads    Number of threads to use.
-  num_iterations Number of polishing iterations to perform.
-  in_draft_fasta Path to the input FASTA/FASTQ containing draft sequences for polishing.
-  in_reads       Path to the input reads file, in FASTA/FASTQ format. Can be gzipped.
-  in_readmers    Path to a Meryl database of Illumina k-mers. Can be HiFi k-mers or true duplex k-mers, ONT simplex k-mers are not recommended (early 2024).
-  out_prefix     Prefix of the output files. A folder will automatically be created if it does not exist.
-  read_type      pb or ont. Optimize read alignments for PacBio HiFi reads (pb) or ONT reads (ont).
-  k_mer_size     Meryl database k-mer size. Must match input k-mer readmer size. Recommend k=31.
+Usage:
+ automated-polishing_v2.2.sh (options) -d <draft fasta> -r <reads> -m <readmers> -s <sequencer type>
+
+Required Arguments:
+
+-d	Draft Fasta - path to the input FASTA/FASTQ containing draft sequences for polishing
+-r	Reads - path to the input reads file, in FASTA/FASTQ format (can be gzipped)
+-m	Readmers - path to a Meryl database of read (in order of preference: Illumina - PacBio Hifi - ONT Duplex) k-mers
+-s	Sequencing Type - pb or ont, use pb for HiFi and Illumina, ont for all ONT read types
+
+Optional Arguments:
+
+-o	Out Prefix - prefix of the output files. Default: AutoPolisher
+-k	K-mer Size - Meryl database k-mer size, should follow initial input. Default (recommended): k=31
+-t	Num Threads - number of threads to use. Default: 32
+-i	Iterations - number of polishing iterations to perform. Default: 3
 ```
 
 ## Description
@@ -51,7 +59,7 @@ This script automatically launches Winnowmap2 to align a read set of choice, the
 
 ## Installation
 
-A dedicated conda environment is highly recommended. A YML file is available in this repo. Otherwise, install each package independently (or load them on a SLURM-like cluster environment, etc). Note that using package managers for the installation of Racon will lead to a pipeline error with an error code of 'invalid option -L'. Racon must be installed from the following Git repo: https://github.com/pgrady1322/racon
+A dedicated conda environment is highly recommended. A YML file is available in this repo. Otherwise, install each package independently (or load them on a SLURM-like cluster environment, etc). Note that using package managers for the installation of Racon will lead to a pipeline error with an error code of 'invalid option -L'. Racon must be installed from the following Git repo: https://github.com/pgrady1322/racon, or any available liftover branch from the main Racon repository.
 
 ### Conda installation
 
