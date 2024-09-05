@@ -126,5 +126,3 @@ dependencies:
   - zipp
   - zlib
   - zstd
-  - pip:
-    - git+https://github.com/pgrady1322/racon.git
