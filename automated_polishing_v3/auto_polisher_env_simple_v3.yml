@@ -1,0 +1,16 @@
+name: t2t_automated_polishing
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bcftools
+  - genomescope2
+  - jellyfish
+  - merfin
+  - meryl
+  - minimap2
+  - pb-falconc
+  - pbipa
+  - samtools
+  - winnowmap
