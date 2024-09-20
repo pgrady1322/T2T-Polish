@@ -1,44 +1,44 @@
 # T2T-Automated-Polishing
 
-**Forked from main branch for modification & independent use** Evaluation and polishing workflows for T2T genome assemblies. 
-Please cite if any of the codes shared in this repo was used:
+Fully automatic K-mer based polishing of genome assemblies.
+
+Current version is unpublished. Please cite this paper, Arang Rhie's T2T-Polish Git Repository, and this Git Repository if any of the code shared in this repo is used:
 
 Mc Cartney AM, Shafin K, Alonge M et al. Chasing perfection: validation and polishing strategies for telomere-to-telomere genome assemblies. Nat Methods (2022) doi: https://doi.org/10.1038/s41592-022-01440-3
 
+For further details on exact application to T2T-CHM13, read the corresponding section below.
+
+## Description and Best Practices
+
+Auto-Polisher launches an iterative process that allows for more precise K-mer based polishing than typical consensus-only methods. Meryl and Winnowmap2 identify unique k-mers throughout the assembly, and map reads. These reads are extensively filtered in falconc and Merfin to allow for the best base-level polishes. Once corrections are made, this process repeats to now re-anchor on k-mers that are now present in the assembly from previous correction. Generally, base-level accuracy peaks at three iterations (the program default). Genome assembly accuracy can be assessed post-polish by Merqury, and it is highly recommended to use a hybrid k-mer database filtered for k-mers greater than one to obtain the most accurate Merqury QV. The steps for this via [Meryl and Merqury can be found here](https://github.com/arangrhie/T2T-Polish/tree/master/merqury#2-hybrid), as recommended by the developer, Arang Rhie. Using incomplete Meryl DBs to assess post auto-polisher can lead to inaccurate Merqury QV estimates.
 
 
-For exact command lines and workflows used to generate the T2T-CHM13v1.0 and T2T-CHM13v1.1 assemblies, please refer to the [Methods](https://github.com/marbl/CHM13-issues#methods) section in the [CHM13-Issues](https://github.com/marbl/CHM13-issues) repo. Note that some of the tools have been updated since then, and are tracked on this repo.
+## How to Run (Quick Start)
 
-This README contains details about applying the automated polishing on general genome assemblies. Step by step detail is available in the automated_polshing folder.
-
-The [original script](https://github.com/arangrhie/T2T-Polish/blob/master/automated_polishing/automated-polishing-legacy.sh) used 
-in [McCartney et al, 2021](https://doi.org/10.1101/2021.07.02.450803). In this version, the original script from McCartney et al. 2021 and subsequently Arang Rhie's manual edits has been further updated with a manually changed version of the Racon liftover chain.
-
-## Dependencies 
-* [Winnowmap2](https://github.com/marbl/Winnowmap)
-* [Falconc available in pbipa package](https://github.com/bio-nim/pb-falconc/releases)
-* [Racon (liftover branch)](https://github.com/pgrady1322/racon)
-* [Meryl v1.3](https://github.com/marbl/meryl)
-* [Merfin v1.0](https://github.com/arangrhie/merfin)
-* [Samtools](https://github.com/samtools/samtools)
-* [BCFtools](https://github.com/samtools/bcftools)
-
-
-## How to run (Quick Start)
-
-Allocate a fairly large amount of RAM relative to the size of your read set. The Racon step requires the loading of all reads into memory. For instance, a Revio flow cell (~100Gb) requires approximately 400Gb of RAM on a mammalian genome. This pipeline accepts (**and highly recommends**) Herro-corrected ONT reads (use the ONT setting to account for ONT-specific base biases).
+Allocate a fairly large amount of RAM relative to the size of your read set. The Racon step requires the loading of all reads into memory. For instance, a Revio flow cell (~100Gb) requires approximately 400Gb of RAM on a mammalian genome. This pipeline accepts (**and highly recommends**) Herro-corrected ONT reads (use the ONT setting to account for ONT-specific base biases) produced with either the original [Herro](https://github.com/lbcb-sci/herro) (R9 and R10 reads) or [Dorado correct](https://github.com/nanoporetech/dorado) (only R10 at time of v3 release).
 
 ```
-Automated polishing of draft genomes, version 2.2
+Automated polishing of draft genomes, version 3
 
-Usage:
- automated-polishing_v2.2.sh (options) -d <draft fasta> -r <reads> -m <readmers> -s <sequencer type>
+Subcommands:
+
+automated-polishing_v3.sh fullauto - Runs the complete pipeline, including automated GenomeScope k-coverage analysis
+automated-polishing_v3.sh polish - Runs a basic automated polishing run
+automated-polishing_v3.sh optimizedpolish - Runs an optimized polishing run, requires manual k-cov peak and fitted lookup table from GenomeScope2
+automated-polishing_v3.sh computekcov - Calculate kcov and fitted histogram for Merfin using GenomeScope
+
+For help with each subcommand run:
+automated-polishing_v3.sh <subcommand> -h|--help
+```
+
+```
+Fully Automatic Polisher Usage:
+ automated-polishing_v3.sh fullauto (options) -d <draft fasta> -r <reads.gz> -s <sequencer type>
 
 Required Arguments:
 
 -d	Draft Fasta - path to the input FASTA/FASTQ containing draft sequences for polishing
--r	Reads - path to the input reads file, in FASTA/FASTQ format (can be gzipped)
--m	Readmers - path to a Meryl database of read (in order of preference: Illumina - PacBio Hifi - ONT Duplex) k-mers
+-r	Reads - path to the input reads file, in FASTA/FASTQ format (MUST be gzipped).
 -s	Sequencing Type - pb or ont, use pb for HiFi and Illumina, ont for all ONT read types
 
 Optional Arguments:
@@ -49,25 +49,32 @@ Optional Arguments:
 -i	Iterations - number of polishing iterations to perform. Default: 3
 ```
 
-## Description
+## Dependencies 
+* [Winnowmap2](https://github.com/marbl/Winnowmap)
+* [Falconc, available in pbipa package](https://github.com/bio-nim/pb-falconc/releases)
+* [Racon (liftover branch)](https://github.com/pgrady1322/racon)
+* [Meryl v1.3](https://github.com/marbl/meryl)
+* [Merfin v1.0](https://github.com/arangrhie/merfin)
+* [Samtools](https://github.com/samtools/samtools)
+* [BCFtools](https://github.com/samtools/bcftools)
 
-This script automatically launches Winnowmap2 to align a read set of choice, then uses falconc, a coordinate based version of Racon, and Merfin to call and filter polishing edits, and finalizes with bcftools to generate the polished consensus in one iteration. The number of iterations can be specified.
+## Dependencies for FullAuto and ComputeKCov modes
+* [Jellyfish](https://github.com/gmarcais/Jellyfish)
+* [GenomeScope2](https://github.com/tbenavi1/genomescope2.0)
 
-## Future Roadmap
-
-1) Winnowmap2 will remap based on a new Meryl k-mer db in successive iterations.
-2) GPU support.
 
 ## Installation
 
-A dedicated conda environment is highly recommended, but not strictly necessary. A YML file is available in this repo. Otherwise, install each package independently (or load them on a SLURM-like cluster environment, etc). Note that using package managers for the installation of Racon will lead to a pipeline error with an error code of 'invalid option -L'. Racon must be installed from the following Git repo: https://github.com/pgrady1322/racon, or any available liftover branch from the main Racon repository.
+A dedicated environment is highly recommended, but not strictly necessary. A YML file is available in this repo. Otherwise, each dependency must be installed independently (or loaded on an HPC with shared modules, etc).
+
+**Important Note**: Using package managers for the installation of Racon will lead to a pipeline error with an error code of 'invalid option -L'. Racon must be installed from the following Git repo: https://github.com/pgrady1322/racon, or any available liftover branch from the main Racon repository.
 
 ### Conda Installation of Most Dependencies
 
 Use these directions to build into a conda environment for the T2T Automated pipeline with the Conda YML in this Git repo.
 
 ```bash
-conda env create -f t2tauto.yml -n t2t-auto-polisher
+conda env create -f auto_polisher_env_simple_v3.yml -n t2t-auto-polisher
 ```
 
 ### Installation of Specialized Racon
@@ -85,7 +92,7 @@ make
 
 The remaining dependencies can be installed via pip, conda, or whatever your preferred installation method is (module loaded on an HPC, compiled, etc.). As long as they are on PATH, the auto-polisher will be able to use them.
 
-If strictly necessary, find the dependencies block in the automated_polisher_v#.sh script and modify the values as follows:
+If strictly necessary, find the dependencies block in the automated_polisher_v# script and modify the values as follows:
 
 ```bash
 # Dependencies.
@@ -98,3 +105,19 @@ BCFTOOLS=bcftools
 ```
 
 Modify the **lowercase** values to whatever the call for that program is on your computing environment. These can be full paths. 
+
+
+## Future Roadmap
+
+1) GPU support.
+2) Automatic assessment of QV score at each step (the pipeline performs this internally, but it is not yet output).
+
+
+## T2T-CHM13 Original Resources
+
+For exact command lines and workflows used to generate the T2T-CHM13v1.0 and T2T-CHM13v1.1 assemblies, please refer to the [Methods](https://github.com/marbl/CHM13-issues#methods) section in the [CHM13-Issues](https://github.com/marbl/CHM13-issues) repo. Note that some of the tools have been updated since then, and are tracked on this repo.
+
+This README contains details about applying the automated polishing on general genome assemblies. Step by step detail is available in the automated_polshing folder.
+
+The [original script](https://github.com/arangrhie/T2T-Polish/blob/master/automated_polishing/automated-polishing-legacy.sh) used 
+in [McCartney et al, 2021](https://doi.org/10.1101/2021.07.02.450803). In this version, the original script from McCartney et al. 2021 and subsequently Arang Rhie's manual edits has been further updated with a manually changed version of the Racon liftover chain.
