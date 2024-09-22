@@ -130,14 +130,14 @@ run_one_standard_iteration () {
 
     # Get the absolute paths.
     mkdir -p $(dirname ${out_prefix})
-    out_prefix=$(basename ${out_prefix})
+    out_prefix=$(realpath ${out_prefix})
 	
     # Generate repetitive 15-mers to downweight.
     local out_winnowmap_bam=${out_prefix}.winnowmap.bam
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} k=15 threads=${num_threads} memory=50 count ${in_draft} output merylDB
+    ${MERYL} count k=15 ${in_draft} output merylDB
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} threads=${num_threads} memory=50 print greater-than distinct=0.9998 merylDB > ${out_winnowmap_bam}.repetitive_k15.txt
+    ${MERYL} print greater-than distinct=0.9998 merylDB > ${out_winnowmap_bam}.repetitive_k15.txt
 
     # Map the reads using Winnowmap.
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
@@ -163,7 +163,7 @@ run_one_standard_iteration () {
     # Generate the Meryl database.
     local out_meryl=${out_prefix}.racon.meryl
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} k=${k_mer_size} threads=${num_threads} memory=50 count ${in_draft} output ${out_meryl}
+    ${MERYL} count k=${k_mer_size} ${in_draft} output ${out_meryl}
 
     # Run Merfin.
     local out_merfin=${out_prefix}.racon.merfin
@@ -186,14 +186,14 @@ run_one_optimized_iteration () {
 
     # Get the absolute paths.
     mkdir -p $(dirname ${out_prefix})
-    out_prefix=$(basename ${out_prefix})
+    out_prefix=$(realpath ${out_prefix})
 	
     # Generate repetitive 15-mers to downweight.
     local out_winnowmap_bam=${out_prefix}.winnowmap.bam
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} k=15 threads=${num_threads} memory=50 count ${in_draft} output merylDB
+    ${MERYL} count k=15 ${in_draft} output merylDB
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} threads=${num_threads} memory=50 print greater-than distinct=0.9998 merylDB > ${out_winnowmap_bam}.repetitive_k15.txt
+    ${MERYL} print greater-than distinct=0.9998 merylDB > ${out_winnowmap_bam}.repetitive_k15.txt
 
     # Map the reads using Winnowmap.
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
@@ -219,7 +219,7 @@ run_one_optimized_iteration () {
     # Generate the Meryl database.
     local out_meryl=${out_prefix}.racon.meryl
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} k=${k_mer_size} threads=${num_threads} memory=50 count ${in_draft} output ${out_meryl}
+    ${MERYL} count k=${k_mer_size} ${in_draft} output ${out_meryl}
 
     # Run Merfin.
     local out_merfin=${out_prefix}.racon.merfin
@@ -648,7 +648,7 @@ sub_fullauto () {
 	echo ${fitted_hist_location}
 
 	/usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-	${MERYL} k=${k_mer_size} threads=${num_threads} memory=50 count ${in_reads} output ${out_prefix}.in_mers.meryl
+	${MERYL} k=${k_mer_size} threads=${num_threads} mem=50 count ${in_reads} output ${out_prefix}.in_mers.meryl
 	in_readmers=${out_prefix}.in_mers.meryl
 
 	for (( i = 0 ; i < ${iterations} ; i++ ))
