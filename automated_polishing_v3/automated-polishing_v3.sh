@@ -648,7 +648,7 @@ sub_fullauto () {
 	echo ${fitted_hist_location}
 
 	/usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-	${MERYL} k=${k_mer_size} threads=${num_threads} mem=50 count ${in_reads} output ${out_prefix}.in_mers.meryl
+	${MERYL} k=${k_mer_size} threads=${num_threads} memory=50 count ${in_reads} output ${out_prefix}.in_mers.meryl
 	in_readmers=${out_prefix}.in_mers.meryl
 
 	for (( i = 0 ; i < ${iterations} ; i++ ))
