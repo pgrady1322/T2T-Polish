@@ -135,7 +135,7 @@ run_one_standard_iteration () {
     # Generate repetitive 15-mers to downweight.
     local out_winnowmap_bam=${out_prefix}.winnowmap.bam
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} count k=15 ${in_draft} output merylDB
+    ${MERYL} k=15 threads=${num_threads} memory=50 count ${in_draft} output merylDB
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${MERYL} print greater-than distinct=0.9998 merylDB > ${out_winnowmap_bam}.repetitive_k15.txt
 
@@ -163,7 +163,7 @@ run_one_standard_iteration () {
     # Generate the Meryl database.
     local out_meryl=${out_prefix}.racon.meryl
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} count k=${k_mer_size} ${in_draft} output ${out_meryl}
+    ${MERYL} k=${k_mer_size} threads=${num_threads} memory=50 count ${in_draft} output ${out_meryl}
 
     # Run Merfin.
     local out_merfin=${out_prefix}.racon.merfin
@@ -176,8 +176,8 @@ run_one_standard_iteration () {
     ${BCFTOOLS} view -Oz ${out_merfin}.polish.vcf > ${out_merfin}.polish.vcf.gz
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${BCFTOOLS} index ${out_merfin}.polish.vcf.gz
-	/usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-	${BCFTOOLS} consensus ${out_merfin}.polish.vcf.gz -f ${in_draft} -H 1 > ${out_consensus}
+    /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
+    ${BCFTOOLS} consensus ${out_merfin}.polish.vcf.gz -f ${in_draft} -H 1 > ${out_consensus}
 }
 
 run_one_optimized_iteration () {
@@ -191,7 +191,7 @@ run_one_optimized_iteration () {
     # Generate repetitive 15-mers to downweight.
     local out_winnowmap_bam=${out_prefix}.winnowmap.bam
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} count k=15 ${in_draft} output merylDB
+    ${MERYL} k=15 threads=${num_threads} memory=50 count ${in_draft} output merylDB
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${MERYL} print greater-than distinct=0.9998 merylDB > ${out_winnowmap_bam}.repetitive_k15.txt
 
@@ -219,7 +219,7 @@ run_one_optimized_iteration () {
     # Generate the Meryl database.
     local out_meryl=${out_prefix}.racon.meryl
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} count k=${k_mer_size} ${in_draft} output ${out_meryl}
+    ${MERYL} k=${k_mer_size} threads=${num_threads} memory=50 count ${in_draft} output ${out_meryl}
 
     # Run Merfin.
     local out_merfin=${out_prefix}.racon.merfin
@@ -232,8 +232,8 @@ run_one_optimized_iteration () {
     ${BCFTOOLS} view -Oz ${out_merfin}.polish.vcf > ${out_merfin}.polish.vcf.gz
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${BCFTOOLS} index ${out_merfin}.polish.vcf.gz
-	/usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-	${BCFTOOLS} consensus ${out_merfin}.polish.vcf.gz -f ${in_draft} -H 1 > ${out_consensus}
+    /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
+    ${BCFTOOLS} consensus ${out_merfin}.polish.vcf.gz -f ${in_draft} -H 1 > ${out_consensus}
 }
 
 sub_computekcov () {
