@@ -14,6 +14,7 @@
 ### Extended Dependencies: jellyfish, genomescope2
 
 whos=$(basename "$0")
+rundir=$(pwd)
 
 # Dependencies.
 RACON=racon
@@ -176,6 +177,7 @@ run_one_standard_iteration () {
     ${BCFTOOLS} index ${out_merfin}.polish.vcf.gz
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${BCFTOOLS} consensus ${out_merfin}.polish.vcf.gz -f ${in_draft} -H 1 > ${out_consensus}
+	cp ${out_consensus} ${rundir}/${out_prefix}.iter_${i}.consensus.fasta
 }
 
 run_one_optimized_iteration () {
@@ -183,7 +185,7 @@ run_one_optimized_iteration () {
     # Get the absolute paths.
     mkdir -p $(dirname ${out_prefix})
     out_prefix=$(realpath ${out_prefix})
-	
+
     # Generate repetitive 15-mers to downweight.
     local out_winnowmap_bam=${out_prefix}.winnowmap.bam
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
@@ -230,6 +232,7 @@ run_one_optimized_iteration () {
     ${BCFTOOLS} index ${out_merfin}.polish.vcf.gz
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${BCFTOOLS} consensus ${out_merfin}.polish.vcf.gz -f ${in_draft} -H 1 > ${out_consensus}
+	cp ${out_consensus} ${rundir}/${out_prefix}.iter_${i}.consensus.fasta
 }
 
 sub_computekcov () {
@@ -249,7 +252,7 @@ sub_computekcov () {
 			echo "Threads set to ${threads}."
 			;;
 		r)
-		in_reads=${OPTARG}
+		in_reads=$(realpath ${OPTARG})
 			echo "Input reads located at ${in_reads}."
 			;;
 		o)
@@ -328,15 +331,15 @@ sub_polish () {
 			echo "Iterations set to ${iterations}."
 			;;
 		d)
-		in_draft=${OPTARG}
+		in_draft=$(realpath ${OPTARG})
 			echo "Draft fasta located at ${in_draft}."
 			;;
 		r)
-		in_reads=${OPTARG}
+		in_reads=$(realpath ${OPTARG})
 			echo "Input reads located at ${in_reads}."
 			;;
 		m)
-		in_readmers=${OPTARG}
+		in_readmers=$(realpath ${OPTARG})
 			echo "Input readmers located at ${in_readmers}."
 			;;
 		o)
@@ -404,6 +407,10 @@ sub_polish () {
 
 	for (( i = 0 ; i < ${iterations} ; i++ ))
 	do next_i=$((i + 1))
+		mkdir ${out_prefix}_iteration_${next_i}
+		iter_folder=${rundir}${out_prefix}_iteration_${next_i}
+		cp ${out_prefix}.iter_${i}.consensus.fasta ${iter_folder}
+		cd ${iter_folder}
 		run_one_standard_iteration ${out_prefix}.iter_${next_i} ${out_prefix}.iter_${i}.consensus.fasta ${num_threads} ${in_reads} ${in_readmers} ${read_types} ${k_mer_size}
 	done
 
@@ -418,7 +425,7 @@ sub_optimizedpolish () {
 	out_prefix='AutoPolisher'
 	k_mer_size='31'
 
-	OPTSTRING=":t:i:d:r:m:o:s:k:p:h"
+	OPTSTRING=":t:i:d:r:m:o:s:k:p:f:h"
 
 	while getopts ${OPTSTRING} opt; do
 	case ${opt} in
@@ -431,15 +438,15 @@ sub_optimizedpolish () {
 			echo "Iterations set to ${iterations}."
 			;;
 		d)
-		in_draft=${OPTARG}
+		in_draft=$(realpath ${OPTARG})
 			echo "Draft fasta located at ${in_draft}."
 			;;
 		r)
-		in_reads=${OPTARG}
+		in_reads=$(realpath ${OPTARG})
 			echo "Input reads located at ${in_reads}."
 			;;
 		m)
-		in_readmers=${OPTARG}
+		in_readmers=$(realpath ${OPTARG})
 			echo "Input readmers located at ${in_readmers}."
 			;;
 		o)
@@ -460,8 +467,8 @@ sub_optimizedpolish () {
 			echo "Merfin peak set to ${OPTARG}."
 			;;
 		f)
-		fitted_hist_location=${OPTARG}
-			echo "Fitted histogram location ${OPTARG}"
+		fitted_hist_location=$(realpath ${OPTARG})
+			echo "Fitted histogram location ${fitted_hist_location}"
 			;;
 		:)
 		echo "Option -${OPTARG} requires an argument."
@@ -530,8 +537,8 @@ sub_optimizedpolish () {
 
 	for (( i = 0 ; i < ${iterations} ; i++ ))
 	do next_i=$((i + 1))
-		mkdir ${out_prefix}_iteration_${next_i}
-		iter_folder = ${realpath ${out_prefix}_iteration_${next_i}}
+		mkdir ${rundir}/${out_prefix}_iteration_${next_i}
+		iter_folder=${rundir}${out_prefix}_iteration_${next_i}
 		cp ${out_prefix}.iter_${i}.consensus.fasta ${iter_folder}
 		cd ${iter_folder}
 		run_one_optimized_iteration ${out_prefix}.iter_${next_i} ${out_prefix}.iter_${i}.consensus.fasta ${num_threads} ${in_reads} ${in_readmers} ${read_types} ${k_mer_size} ${ideal_kcov} ${fitted_hist_location}
@@ -560,15 +567,15 @@ sub_fullauto () {
 			echo "Iterations set to ${iterations}."
 			;;
 		d)
-		in_draft=${OPTARG}
+		in_draft=$(realpath ${OPTARG})
 			echo "Draft fasta located at ${in_draft}."
 			;;
 		r)
-		in_reads=${OPTARG}
+		in_reads=$(realpath ${OPTARG})
 			echo "Input reads located at ${in_reads}."
 			;;
 		m)
-		in_readmers=${OPTARG}
+		in_readmers=$(realpath ${OPTARG})
 			echo "Input readmers located at ${in_readmers}."
 			;;
 		o)
@@ -649,10 +656,14 @@ sub_fullauto () {
 
 	/usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
 	${MERYL} k=${k_mer_size} threads=${num_threads} memory=50 count ${in_reads} output ${out_prefix}.in_mers.meryl
-	in_readmers=${out_prefix}.in_mers.meryl
+	in_readmers=${rundir}${out_prefix}.in_mers.meryl
 
 	for (( i = 0 ; i < ${iterations} ; i++ ))
 	do next_i=$((i + 1))
+		mkdir ${rundir}/${out_prefix}_iteration_${next_i}
+		iter_folder=${rundir}${out_prefix}_iteration_${next_i}
+		cp ${out_prefix}.iter_${i}.consensus.fasta ${iter_folder}
+		cd ${iter_folder}
 		run_one_optimized_iteration ${out_prefix}.iter_${next_i} ${out_prefix}.iter_${i}.consensus.fasta ${num_threads} ${in_reads} ${in_readmers} ${read_types} ${k_mer_size} ${ideal_kcov} ${fitted_hist_location}
 	done
 }
