@@ -408,7 +408,7 @@ sub_polish () {
 	for (( i = 0 ; i < ${iterations} ; i++ ))
 	do next_i=$((i + 1))
 		mkdir ${out_prefix}_iteration_${next_i}
-		iter_folder=${rundir}${out_prefix}_iteration_${next_i}
+		iter_folder=${rundir}/${out_prefix}_iteration_${next_i}
 		cp ${out_prefix}.iter_${i}.consensus.fasta ${iter_folder}
 		cd ${iter_folder}
 		run_one_standard_iteration ${out_prefix}.iter_${next_i} ${out_prefix}.iter_${i}.consensus.fasta ${num_threads} ${in_reads} ${in_readmers} ${read_types} ${k_mer_size}
@@ -538,7 +538,7 @@ sub_optimizedpolish () {
 	for (( i = 0 ; i < ${iterations} ; i++ ))
 	do next_i=$((i + 1))
 		mkdir ${rundir}/${out_prefix}_iteration_${next_i}
-		iter_folder=${rundir}${out_prefix}_iteration_${next_i}
+		iter_folder=${rundir}/${out_prefix}_iteration_${next_i}
 		cp ${out_prefix}.iter_${i}.consensus.fasta ${iter_folder}
 		cd ${iter_folder}
 		run_one_optimized_iteration ${out_prefix}.iter_${next_i} ${out_prefix}.iter_${i}.consensus.fasta ${num_threads} ${in_reads} ${in_readmers} ${read_types} ${k_mer_size} ${ideal_kcov} ${fitted_hist_location}
@@ -661,7 +661,7 @@ sub_fullauto () {
 	for (( i = 0 ; i < ${iterations} ; i++ ))
 	do next_i=$((i + 1))
 		mkdir ${rundir}/${out_prefix}_iteration_${next_i}
-		iter_folder=${rundir}${out_prefix}_iteration_${next_i}
+		iter_folder=${rundir}/${out_prefix}_iteration_${next_i}
 		cp ${out_prefix}.iter_${i}.consensus.fasta ${iter_folder}
 		cd ${iter_folder}
 		run_one_optimized_iteration ${out_prefix}.iter_${next_i} ${out_prefix}.iter_${i}.consensus.fasta ${num_threads} ${in_reads} ${in_readmers} ${read_types} ${k_mer_size} ${ideal_kcov} ${fitted_hist_location}
