@@ -128,11 +128,11 @@ fullauto_help () {
 run_one_standard_iteration () {
 
     # Get the absolute paths.
-    mkdir -p $(dirname ${out_prefix})
-    out_prefix=$(realpath ${out_prefix})
+    mkdir -p $(dirname ${out_iter_prefix})
+    out_iter_prefix=$(realpath ${out_iter_prefix})
 	
     # Generate repetitive 15-mers to downweight.
-    local out_winnowmap_bam=${out_prefix}.winnowmap.bam
+    local out_winnowmap_bam=${out_iter_prefix}.winnowmap.bam
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${MERYL} k=15 threads=${num_threads} memory=50 count ${in_draft} output merylDB
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
@@ -145,39 +145,39 @@ run_one_standard_iteration () {
     samtools view --threads ${num_threads} -hb -T ${in_draft} ${out_winnowmap_bam}.sam > ${out_winnowmap_bam}
 
     # Sort the BAM file.
-    local out_winnowmap_sorted_bam=${out_prefix}.winnowmap.sorted.bam
+    local out_winnowmap_sorted_bam=${out_iter_prefix}.winnowmap.sorted.bam
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     samtools sort --threads ${num_threads} -o ${out_winnowmap_sorted_bam} ${out_winnowmap_bam}
 
     # Filtering the BAM file.
-    local out_falconc_sam=${out_prefix}.falconc.sam
+    local out_falconc_sam=${out_iter_prefix}.falconc.sam
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     falconc bam-filter-clipped -t -F 0x104 --input-fn ${out_winnowmap_sorted_bam} --output-fn ${out_falconc_sam} --output-count-fn ${out_falconc_sam}.filtered_aln_count.txt 2>&1 | tee ${out_falconc_sam}.falconc.log
 
     # Polish using Racon.
-    local out_racon_fasta=${out_prefix}.racon.fasta
+    local out_racon_fasta=${out_iter_prefix}.racon.fasta
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${RACON} -t ${num_threads} ${in_reads} ${out_falconc_sam} ${in_draft} -L ${out_racon_fasta} -S > ${out_racon_fasta}
 
     # Generate the Meryl database.
-    local out_meryl=${out_prefix}.racon.meryl
+    local out_meryl=${out_iter_prefix}.racon.meryl
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${MERYL} k=${k_mer_size} threads=${num_threads} memory=50 count ${in_draft} output ${out_meryl}
 
     # Run Merfin.
-    local out_merfin=${out_prefix}.racon.merfin
+    local out_merfin=${out_iter_prefix}.racon.merfin
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${MERFIN} -polish -sequence ${in_draft} -seqmers ${out_meryl} -readmers ${in_readmers} -peak 106.7 -min 1 -vcf ${out_racon_fasta}.vcf -output ${out_merfin} -threads ${num_threads}
 
     # Call Consensus
-    local out_consensus=${out_prefix}.consensus.fasta
+    local out_consensus=${out_iter_prefix}.consensus.fasta
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${BCFTOOLS} view -Oz ${out_merfin}.polish.vcf > ${out_merfin}.polish.vcf.gz
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${BCFTOOLS} index ${out_merfin}.polish.vcf.gz
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${BCFTOOLS} consensus ${out_merfin}.polish.vcf.gz -f ${in_draft} -H 1 > ${out_consensus}
-	cp ${out_consensus} ${rundir}${out_prefix}.iter_${next_i}.consensus.fasta
+	cp ${out_consensus} ../
 }
 
 run_one_optimized_iteration () {
@@ -407,11 +407,12 @@ sub_polish () {
 
 	for (( i = 0 ; i < ${iterations} ; i++ ))
 	do next_i=$((i + 1))
-		mkdir ${out_prefix}_iteration_${next_i}
+		mkdir ${rundir}/${out_prefix}_iteration_${next_i}
 		iter_folder=${rundir}/${out_prefix}_iteration_${next_i}
+		out_iter_prefix=${out_prefix}.iter_${next_i}
 		cp ${out_prefix}.iter_${i}.consensus.fasta ${iter_folder}
 		cd ${iter_folder}
-		run_one_standard_iteration ${out_prefix}.iter_${next_i} ${out_prefix}.iter_${i}.consensus.fasta ${num_threads} ${in_reads} ${in_readmers} ${read_types} ${k_mer_size}
+		run_one_standard_iteration ${out_prefix}.iter_${next_i} ${out_prefix}.iter_${i}.consensus.fasta ${num_threads} ${in_reads} ${in_readmers} ${read_types} ${k_mer_size} ${ideal_kcov} ${fitted_hist_location}
 	done
 
 }
@@ -539,6 +540,7 @@ sub_optimizedpolish () {
 	do next_i=$((i + 1))
 		mkdir ${rundir}/${out_prefix}_iteration_${next_i}
 		iter_folder=${rundir}/${out_prefix}_iteration_${next_i}
+		out_iter_prefix=${out_prefix}.iter_${next_i}
 		cp ${out_prefix}.iter_${i}.consensus.fasta ${iter_folder}
 		cd ${iter_folder}
 		run_one_optimized_iteration ${out_prefix}.iter_${next_i} ${out_prefix}.iter_${i}.consensus.fasta ${num_threads} ${in_reads} ${in_readmers} ${read_types} ${k_mer_size} ${ideal_kcov} ${fitted_hist_location}
