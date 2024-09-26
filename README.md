@@ -15,7 +15,7 @@ Auto-Polisher launches an iterative process that allows for more precise K-mer b
 
 ## How to Run (Quick Start)
 
-Allocate a fairly large amount of RAM relative to the size of your read set. The Racon step requires the loading of all reads into memory. For instance, a Revio flow cell (~100Gb) requires approximately 400Gb of RAM on a mammalian genome. This pipeline accepts (**and highly recommends**) Herro-corrected ONT reads (use the ONT setting to account for ONT-specific base biases) produced with either the original [Herro](https://github.com/lbcb-sci/herro) (R9 and R10 reads) or [Dorado correct](https://github.com/nanoporetech/dorado) (only R10 at time of v3 release).
+Allocate a fairly large amount of RAM relative to the size of your read set. The Racon step requires the loading of all reads into memory. For instance, a Revio flow cell (~100Gb) requires approximately 400Gb of RAM on a mammalian genome. This pipeline accepts (**and highly recommends**) Herro-corrected ONT reads (use the ONT setting to account for ONT-specific base biases) produced with either the original [Herro](https://github.com/lbcb-sci/herro) (R9 and R10 reads) or [Dorado correct](https://github.com/nanoporetech/dorado) (only R10 at time of v3 release). For each iteration, temporary work directories will be created. They can be safely discarded after the iteration is complete and the polished assembly appears in the run directory.
 
 ```
 Automated polishing of draft genomes, version 3
