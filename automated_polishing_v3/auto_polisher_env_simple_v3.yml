@@ -6,7 +6,7 @@ channels:
 dependencies:
   - bcftools
   - genomescope2
-  - jellyfish
+  - kmer-jellyfish
   - merfin
   - meryl
   - minimap2
