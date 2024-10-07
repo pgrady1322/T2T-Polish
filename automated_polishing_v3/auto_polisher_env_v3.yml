@@ -39,7 +39,7 @@ dependencies:
   - idna
   - immutables
   - importlib_resources
-  - jellyfish
+  - kmer-jellyfish
   - jinja2
   - jsonschema
   - jsonschema-specifications
