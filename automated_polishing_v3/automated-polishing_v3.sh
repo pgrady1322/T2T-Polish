@@ -292,12 +292,12 @@ sub_computekcov () {
 	echo "Counting Readmers with Jellyfish"
 	echo ""
 
-	${JELLYFISH} count -C -m ${k_mer_size} -s 10000000000 -t ${num_threads} -o ${out_reads_jf} <(zcat $in_reads)
+	${JELLYFISH} count -C -m 21 -s 10000000000 -t ${num_threads} -o ${out_reads_jf} <(zcat $in_reads)
 
 	/usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
 	${JELLYFISH} histo -t ${num_threads} ${out_reads_jf} > ${out_histo_jf}
 
-	ideal_kcov=$(${GENOMESCOPE} -i ${out_histo_jf} -o genomescope_out -k ${k_mer_size} --fitted_hist | grep -oP 'kcov:\s*\K\d*\.?\d*')
+	ideal_kcov=$(${GENOMESCOPE} -i ${out_histo_jf} -o genomescope_out -k 21 --fitted_hist | grep -oP 'kcov:\s*\K\d*\.?\d*')
 
 	fitted_hist_location=$(realpath genomescope_out/lookup_table.txt)
 
@@ -641,12 +641,12 @@ sub_fullauto () {
 	echo "Counting Readmers with Jellyfish"
 	echo ""
 
-	${JELLYFISH} count -C -m ${k_mer_size} -s 10000000000 -t ${num_threads} -o ${out_reads_jf} <(zcat $in_reads)
+	${JELLYFISH} count -C -m 21 -s 10000000000 -t ${num_threads} -o ${out_reads_jf} <(zcat $in_reads)
 
 	/usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
 	${JELLYFISH} histo -t ${num_threads} ${out_reads_jf} > ${out_histo_jf}
 
-	ideal_kcov=$(${GENOMESCOPE} -i ${out_histo_jf} -o genomescope_out -k ${k_mer_size} --fitted_hist | grep -oP 'kcov:\s*\K\d*\.?\d*')
+	ideal_kcov=$(${GENOMESCOPE} -i ${out_histo_jf} -o genomescope_out -k 21 --fitted_hist | grep -oP 'kcov:\s*\K\d*\.?\d*')
 
 	fitted_hist_location=$(realpath genomescope_out/lookup_table.txt)
 
