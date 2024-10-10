@@ -169,7 +169,7 @@ run_one_standard_iteration () {
     # Run Merfin.
     local out_merfin=${out_iter_prefix}.racon.merfin
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERFIN} -polish -sequence ${run_draft} -seqmers ${out_meryl} -readmers ${in_readmers} -peak 106.7 -min 1 -vcf ${out_racon_fasta}.vcf -output ${out_merfin} -threads ${num_threads}
+    ${MERFIN} -polish -sequence ${run_draft} -seqmers ${out_meryl} -readmers ${in_readmers} -peak 106.7 -min 1 -vcf ${out_racon_fasta}.vcf -output ${out_merfin} -threads ${num_threads} -hist -completeness
 
     # Call Consensus
     local out_consensus=${out_iter_prefix}.consensus.fasta
@@ -226,7 +226,7 @@ run_one_optimized_iteration () {
     # Run Merfin.
     local out_merfin=${out_iter_prefix}.racon.merfin
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERFIN} -polish -sequence ${run_draft} -seqmers ${out_meryl} -readmers ${in_readmers} -peak ${ideal_kcov} -min 1 -prob ${fitted_hist_location} -vcf ${out_racon_fasta}.vcf -output ${out_merfin} -threads ${num_threads}
+    ${MERFIN} -polish -sequence ${run_draft} -seqmers ${out_meryl} -readmers ${in_readmers} -peak ${ideal_kcov} -min 1 -prob ${fitted_hist_location} -vcf ${out_racon_fasta}.vcf -output ${out_merfin} -threads ${num_threads} -hist -completeness
 
     # Call Consensus
     local out_consensus=${out_iter_prefix}.consensus.fasta
