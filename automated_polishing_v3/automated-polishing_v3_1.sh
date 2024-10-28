@@ -179,9 +179,9 @@ run_one_standard_iteration () {
     ${BCFTOOLS} index ${out_merfin}.polish.vcf.gz
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${BCFTOOLS} consensus ${out_merfin}.polish.vcf.gz -f ${run_draft} -H 1 > ${out_consensus}
-    touch QV_Completeness.txt
-    ${MERFIN} -hist -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} -output ${out_merfin} >> QV_Completeness.txt
-    ${MERFIN} -completeness -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} >> QV_Completeness.txt
+    touch ../QV_Completeness.txt
+    ${MERFIN} -hist -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} -output ${out_merfin} >> ../QV_Completeness.txt
+    ${MERFIN} -completeness -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} >> ../QV_Completeness.txt
 	cp ${out_consensus} ../
 }
 
@@ -239,9 +239,9 @@ run_one_optimized_iteration () {
     ${BCFTOOLS} index ${out_merfin}.polish.vcf.gz
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${BCFTOOLS} consensus ${out_merfin}.polish.vcf.gz -f ${run_draft} -H 1 > ${out_consensus}
-    touch QV_Completeness.txt
-    ${MERFIN} -hist -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} -output ${out_merfin} >> QV_Completeness.txt
-    ${MERFIN} -completeness -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} >> QV_Completeness.txt
+    touch ../QV_Completeness.txt
+    ${MERFIN} -hist -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} -output ${out_merfin} >> ../QV_Completeness.txt
+    ${MERFIN} -completeness -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} >> ../QV_Completeness.txt
 	cp ${out_consensus} ../
 }
 
