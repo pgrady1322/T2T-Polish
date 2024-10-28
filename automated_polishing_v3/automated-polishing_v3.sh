@@ -136,9 +136,9 @@ run_one_standard_iteration () {
     # Generate repetitive 15-mers to downweight.
     local out_winnowmap_bam=${out_iter_prefix}.winnowmap.bam
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} k=15 threads=${num_threads} memory=50 count ${run_draft} output merylDB
+    ${MERYL} -Q k=15 threads=${num_threads} memory=50 count ${run_draft} output merylDB
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} print greater-than distinct=0.9998 merylDB > ${out_winnowmap_bam}.repetitive_k15.txt
+    ${MERYL} print greater-than -Q distinct=0.9998 merylDB > ${out_winnowmap_bam}.repetitive_k15.txt
 
     # Map the reads using Winnowmap.
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
@@ -164,7 +164,7 @@ run_one_standard_iteration () {
     # Generate the Meryl database.
     local out_meryl=${out_iter_prefix}.racon.meryl
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} k=${k_mer_size} threads=${num_threads} memory=50 count ${run_draft} output ${out_meryl}
+    ${MERYL} -Q k=${k_mer_size} threads=${num_threads} memory=50 count ${run_draft} output ${out_meryl}
 
     # Run Merfin.
     local out_merfin=${out_iter_prefix}.racon.merfin
@@ -179,8 +179,9 @@ run_one_standard_iteration () {
     ${BCFTOOLS} index ${out_merfin}.polish.vcf.gz
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${BCFTOOLS} consensus ${out_merfin}.polish.vcf.gz -f ${run_draft} -H 1 > ${out_consensus}
-    ${MERFIN} -hist -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} -output ${out_merfin}
-    ${MERFIN} -completeness -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location}
+    touch QV_Completeness.txt
+    ${MERFIN} -hist -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} -output ${out_merfin} >> QV_Completeness.txt
+    ${MERFIN} -completeness -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} >> QV_Completeness.txt
 	cp ${out_consensus} ../
 }
 
@@ -195,9 +196,9 @@ run_one_optimized_iteration () {
     # Generate repetitive 15-mers to downweight.
     local out_winnowmap_bam=${out_iter_prefix}.winnowmap.bam
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} k=15 threads=${num_threads} memory=50 count ${run_draft} output merylDB
+    ${MERYL} -Q k=15 threads=${num_threads} memory=50 count ${run_draft} output merylDB
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} print greater-than distinct=0.9998 merylDB > ${out_winnowmap_bam}.repetitive_k15.txt
+    ${MERYL} print greater-than -Q distinct=0.9998 merylDB > ${out_winnowmap_bam}.repetitive_k15.txt
 
     # Map the reads using Winnowmap.
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
@@ -223,7 +224,7 @@ run_one_optimized_iteration () {
     # Generate the Meryl database.
     local out_meryl=${out_iter_prefix}.racon.meryl
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-    ${MERYL} k=${k_mer_size} threads=${num_threads} memory=50 count ${run_draft} output ${out_meryl}
+    ${MERYL} -Q k=${k_mer_size} threads=${num_threads} memory=50 count ${run_draft} output ${out_meryl}
 
     # Run Merfin.
     local out_merfin=${out_iter_prefix}.racon.merfin
@@ -238,8 +239,9 @@ run_one_optimized_iteration () {
     ${BCFTOOLS} index ${out_merfin}.polish.vcf.gz
     /usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
     ${BCFTOOLS} consensus ${out_merfin}.polish.vcf.gz -f ${run_draft} -H 1 > ${out_consensus}
-    ${MERFIN} -hist -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} -output ${out_merfin}
-    ${MERFIN} -completeness -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location}
+    touch QV_Completeness.txt
+    ${MERFIN} -hist -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} -output ${out_merfin} >> QV_Completeness.txt
+    ${MERFIN} -completeness -sequence ${out_consensus} -readmers ${in_readmers} -peak ${ideal_kcov} -prob ${fitted_hist_location} >> QV_Completeness.txt
 	cp ${out_consensus} ../
 }
 
@@ -665,7 +667,7 @@ sub_fullauto () {
 	echo ${fitted_hist_location}
 
 	/usr/bin/time --format="cmd: %C\\nreal_time: %e s\\nuser_time: %U s\\nsys_time: %S s\\nmax_rss: %M kB\\nexit_status: %x\n" >&2 \
-	${MERYL} k=${k_mer_size} threads=${num_threads} memory=50 count ${in_reads} output ${out_prefix}.in_mers.meryl
+	${MERYL} -Q k=${k_mer_size} threads=${num_threads} memory=50 count ${in_reads} output ${out_prefix}.in_mers.meryl
 	in_readmers=${rundir}/${out_prefix}.in_mers.meryl
 
 	for (( i = 0 ; i < ${iterations} ; i++ ))
