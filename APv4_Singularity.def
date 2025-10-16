@@ -1,0 +1,100 @@
+Bootstrap: library
+From: ubuntu:22.04
+
+%labels
+    Author Patrick Grady
+
+%environment
+    export DEBIAN_FRONTEND=noninteractive
+    export TZ=Etc/UTC
+    export CONDA_DIR=/opt/conda
+    export PATH=/opt/conda/envs/apv4-env/bin:/opt/conda/bin:/usr/local/bin:$PATH
+
+%post
+    export CONDA_DIR=/opt/conda
+    export PATH=$CONDA_DIR/bin:$PATH
+    # 1. System dependencies
+    # Preseed tzdata to avoid interactive prompt
+    echo "tzdata tzdata/Areas select Etc" | debconf-set-selections
+    echo "tzdata tzdata/Zones/Etc select UTC" | debconf-set-selections
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update --allow-releaseinfo-change && apt-get install -y \
+        build-essential ca-certificates wget git cmake python3 python3-pip \
+        curl unzip default-jre zlib1g-dev libbz2-dev liblzma-dev \
+        samtools bcftools python3-dev libcurl4-gnutls-dev libssl-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+    # 3. Install Miniconda
+    wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+         -O /tmp/conda.sh && \
+    bash /tmp/conda.sh -b -p $CONDA_DIR && \
+    rm /tmp/conda.sh
+
+    # 4. Create and populate the bioinformatics environment
+    conda update -n base -c defaults conda -y && \
+    conda create -y -n apv4-env -c defaults -c conda-forge -c bioconda \
+        python=3.6 \
+        deepvariant=1.4.0 \
+        meryl \
+        winnowmap \
+        kmer-jellyfish \
+        genomescope2 \
+        samtools \
+        pysam \
+        tqdm \
+        pb-falconc && \
+    conda clean --all -y
+
+    # Expose conda env executables on PATH, but avoid overwriting system perl
+    find "$CONDA_DIR/envs/apv4-env/bin" -maxdepth 1 -type f -executable ! -name 'perl*' \
+        -exec install -m 0755 {} /usr/local/bin/ \;
+
+    # 5. Install Merfin v1.1 from source
+    mkdir -p /opt/Merfin && \
+    for i in 1 2 3; do \
+      git clone --depth 1 --branch v1.1 --recurse-submodules https://github.com/arangrhie/merfin.git /opt/Merfin && break || \
+      (echo "Merfin clone attempt $i failed, retrying in 5s..." >&2; sleep 5); \
+    done && \
+      # Ensure all nested submodules are present (safety for shallow clone)
+      git -C /opt/Merfin submodule update --init --recursive && \
+    cd /opt/Merfin/src && \
+    make -j"$(nproc)" && \
+    install -m 0755 /opt/Merfin/build/bin/merfin /usr/local/bin/merfin && \
+    ln -sf /usr/local/bin/merfin /usr/local/bin/Merfin && \
+    cd / && rm -rf /opt/Merfin
+
+    # 6. Install Merqury from source with retries and expose binary
+    mkdir -p /opt/Merqury && \
+    for i in 1 2 3; do \
+      git clone --depth 1 https://github.com/marbl/merqury.git /opt/Merqury && break || \
+      (echo "Merqury clone attempt $i failed, retrying in 5s..." >&2; sleep 5); \
+    done && \
+    mkdir -p /opt/Merqury/bin && \
+    install -m 0755 /opt/Merqury/merqury.sh /opt/Merqury/bin/merqury && \
+    install -m 0755 /opt/Merqury/bin/merqury /usr/local/bin/merqury && \
+    ln -sf /usr/local/bin/merqury /usr/local/bin/merqury.sh && \
+    ln -sf /usr/local/bin/merqury.sh "$CONDA_DIR/envs/apv4-env/bin/merqury.sh" && \
+    ln -sf /usr/local/bin/merqury "$CONDA_DIR/envs/apv4-env/bin/merqury" && \
+    rm -rf /opt/Merqury
+
+    # 7. Clean up APT caches
+    rm -rf /var/lib/apt/lists/*
+
+%files
+    APv4.py /usr/local/bin/APv4.py
+
+%post
+    chmod +x /usr/local/bin/APv4.py
+    ln -s /usr/local/bin/APv4.py /usr/local/bin/APv4
+
+%runscript
+    # Activate the bioinformatics conda environment
+    source "$CONDA_DIR/bin/activate" apv4-env
+    exec APv4 "$@"
+
+%test
+  # Ensure APv4 entrypoint is available
+  which APv4 || (echo "Error: APv4 not found in PATH" >&2; exit 1)
+  # Ensure Merqury is present
+  which merqury.sh || (echo "Error: merqury.sh not found in PATH" >&2; exit 1)
+  which merfin || (echo "Error: merfin not found in PATH" >&2; exit 1)
