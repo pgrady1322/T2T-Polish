@@ -165,7 +165,7 @@ python APv4.py polish -d draft.fasta -r reads.fq \
 
 ## Installation
 
-### Conda Environment (Recommended)
+### Conda Environment (Most tested, recommended)
 
 A dedicated Conda environment is highly recommended. A YML file (`APv4.yml`) is available in this repo for easy setup:
 
