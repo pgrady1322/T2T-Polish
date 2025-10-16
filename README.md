@@ -134,7 +134,7 @@ python APv4.py polish -d draft.fasta -r reads.fq \
 
 ### System Requirements
 
-- **GPU**: Required for DeepVariant acceleration (NVIDIA GPU with CUDA support)
+- **GPU**: Required for DeepVariant acceleration (NVIDIA GPU with CUDA support). **Theoretically, this will work with CPU-enabled DeepVariant, but it has not been tested.**
 - **RAM**: Allocate sufficient memory for read processing (e.g., ~400GB for a Revio flow cell on mammalian genomes)
 - **Disk Space**: Ensure adequate space for intermediate files and output
 
@@ -542,7 +542,6 @@ python APv4.py polish -d draft.fasta -r reads.fq \
 ### Notable Changes
 
 - **No GZIP requirement**: v4 accepts uncompressed FASTQ/FASTA
-- **GPU required**: DeepVariant needs NVIDIA GPU with Singularity
 - **Automatic readmers**: When using `--optimized`, readmers DB is computed automatically
 - **Read corrector info**: FASTA inputs can specify corrector type (hifiasm, herro, flye) for quality score assignment
 
