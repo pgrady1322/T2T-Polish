@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+T2T-Polish v4.0
+
+Automated Polishing Pipeline v4 — iterative assembly polishing with Merfin and Winnowmap.
+
+Author: Patrick Grady
+Anthropic Claude Opus 4.6 used for code formatting and cleanup assistance.
+License: Public Domain (U.S. Government Work - NHGRI/NIH)
+"""
 
 import sys
 sys.stdout.flush()
@@ -1300,3 +1310,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# T2T-Polish v4.0
+# Any usage is subject to this software's license.
