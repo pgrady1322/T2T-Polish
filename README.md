@@ -1,5 +1,10 @@
 # T2T-Automated-Polishing
 
+[![Python](https://img.shields.io/badge/python-3.x-blue.svg)](https://www.python.org/downloads/)
+[![Singularity](https://img.shields.io/badge/singularity-container-blue.svg)](APv4_Singularity.def)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](Dockerfile)
+[![License: Public Domain](https://img.shields.io/badge/license-Public%20Domain-lightgrey.svg)](LICENSE)
+
 Fully automatic K-mer based polishing of genome assemblies.
 
 Current version is unpublished. Please cite this paper, Arang Rhie's T2T-Polish Git Repository, and this Git Repository if any of the code shared in this repo is used:
