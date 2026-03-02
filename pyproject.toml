@@ -1,0 +1,71 @@
+# ═══════════════════════════════════════════════════════════════════════
+# T2T-Polish — Project Configuration (PEP 517/518)
+# ═══════════════════════════════════════════════════════════════════════
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "t2t-polish"
+version = "4.0.0"
+description = "Fully automatic, iterative K-mer based polishing of genome assemblies"
+readme = "README.md"
+license = {text = "Public Domain (U.S. Government Work - NHGRI/NIH)"}
+authors = [{name = "Patrick Grady"}]
+requires-python = ">=3.10"
+dependencies = [
+    "pysam>=0.20",
+    "tqdm>=4.60",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov", "ruff", "mypy"]
+
+[project.scripts]
+t2t-polish = "t2t_polish.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/arangrhie/T2T-Polish"
+Repository = "https://github.com/arangrhie/T2T-Polish"
+
+# ═══════════════════════════════════════════════════════════════════════
+# Tool Configuration
+# ═══════════════════════════════════════════════════════════════════════
+
+[tool.setuptools.packages.find]
+include = ["t2t_polish*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["E501", "SIM117", "UP022"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_redundant_casts = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]

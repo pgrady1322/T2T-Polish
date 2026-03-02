@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 T2T-Polish v4.0
 
-Backward-compatible shim — delegates to the ``t2t_polish`` package.
+Fully automatic, iterative K-mer based polishing of genome assemblies.
 
 Author: Patrick Grady
 Anthropic Claude Opus 4.6 used for code formatting and cleanup assistance.
 License: Public Domain (U.S. Government Work - NHGRI/NIH)
 """
 
-from t2t_polish.cli import main
+__version__ = "4.0.0"
 
-if __name__ == "__main__":
-    main()
+from t2t_polish.constants import (  # noqa: F401
+    DEFAULT_CORRECTOR_Q,
+    DEFAULT_KMER_SIZE,
+    TOOL_NAMES,
+)
 
 # T2T-Polish v4.0
 # Any usage is subject to this software's license.

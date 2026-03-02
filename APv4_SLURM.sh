@@ -9,4 +9,4 @@
 #SBATCH -o %x_%j.stdout
 #SBATCH -e %x_%j.stderr
 
-python AP_v4.py polish -d draft.fasta -r reads.fastq.gz --optimized --singularity_sif deepvariant_1.5.0-gpu.sif
+python APv4.py polish -d draft.fasta -r reads.fastq.gz --optimized --singularity_sif deepvariant_1.5.0-gpu.sif
