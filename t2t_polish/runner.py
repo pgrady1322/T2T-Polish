@@ -132,7 +132,10 @@ def conditional_run(
     command: list[str],
     stream: bool = False,
     timeout: int | None = None,
-    **kwargs: object,
+    use_shell: bool = False,
+    flush: bool = True,
+    logfile: str | None = None,
+    max_log_lines: int = 100,
 ) -> CommandResult | None:
     """Run *command* only when *outfile* is missing (resume-aware).
 
@@ -180,7 +183,15 @@ def conditional_run(
             logger.info("Completed: %s (streamed to %s)", step_desc, outfile)
         return None
 
-    result = run_command(command, description=step_desc, timeout=timeout, **kwargs)
+    result = run_command(
+        command,
+        description=step_desc,
+        timeout=timeout,
+        use_shell=use_shell,
+        flush=flush,
+        logfile=logfile,
+        max_log_lines=max_log_lines,
+    )
     if result.returncode != 0:
         raise PipelineStepError(
             step=step_desc,

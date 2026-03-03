@@ -133,7 +133,7 @@ def sub_computekcov(args: object) -> tuple[str | None, str]:
     )
 
     # Parse kcov from stdout first, then fall back to params.txt
-    discovered_kcov: str | None = None
+    discovered_kcov = None
     if result and result.stdout:
         match = re.search(r"kcov:([0-9]+(?:\.[0-9]+)?)", result.stdout)
         if match:

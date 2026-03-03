@@ -698,10 +698,11 @@ def _compute_kcov_if_needed(
         )
         discovered_kcov, fitted_hist_location = sub_computekcov(ckargs)
         cfg.fitted_hist = fitted_hist_location
+        peak_val = float(discovered_kcov) if discovered_kcov is not None else None
         if cfg.ploidy == "haploid":
-            cfg.ideal_dpeak = discovered_kcov
+            cfg.ideal_dpeak = peak_val
         else:
-            cfg.ideal_hpeak = discovered_kcov
+            cfg.ideal_hpeak = peak_val
         chosen_peak = discovered_kcov
     elif cfg.optimized:
         if cfg.ploidy == "haploid":
