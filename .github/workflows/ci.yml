@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main, master, v4]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest

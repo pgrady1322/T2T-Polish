@@ -5,6 +5,18 @@ All notable changes to T2T-Polish will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **CI/CD workflows** for automated releases on `v*` tags:
+  - **GitHub Release** — auto-generates a changelog-based Release page.
+  - **PyPI Publish** — builds sdist + wheel and uploads via OIDC trusted publishing.
+  - **GHCR Docker Publish** — builds and pushes the Docker image to
+    `ghcr.io/pgrady1322/t2t-polish` with semver tags and layer caching.
+- **Concurrency controls** on CI — in-flight runs are cancelled when new
+  commits are pushed to the same branch/PR.
+
 ## [4.1.0] — 2025-07-18
 
 ### Added

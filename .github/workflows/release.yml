@@ -1,0 +1,54 @@
+# ═══════════════════════════════════════════════════════════════════════
+# GitHub Release — auto-create a Release when a version tag is pushed
+# ═══════════════════════════════════════════════════════════════════════
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  github-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history for changelog
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog from commits
+        id: changelog
+        run: |
+          # Get commits between this tag and the previous tag
+          PREV_TAG=$(git tag --sort=-v:refname | head -n 2 | tail -n 1)
+          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "$GITHUB_REF_NAME" ]; then
+            COMMITS=$(git log --oneline --no-merges HEAD~20..HEAD)
+          else
+            COMMITS=$(git log --oneline --no-merges "${PREV_TAG}..${GITHUB_REF_NAME}")
+          fi
+
+          # Write multi-line output
+          {
+            echo "body<<EOF"
+            echo "## What's Changed"
+            echo ""
+            echo "$COMMITS" | sed 's/^/- /'
+            echo ""
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${GITHUB_REF_NAME}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: T2T-Polish ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.body }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'rc') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}

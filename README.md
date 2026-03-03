@@ -1,6 +1,8 @@
 # T2T-Automated-Polishing
 
 [![CI](https://github.com/pgrady1322/T2T-Polish/actions/workflows/ci.yml/badge.svg)](https://github.com/pgrady1322/T2T-Polish/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/t2t-polish)](https://pypi.org/project/t2t-polish/)
+[![GHCR](https://img.shields.io/badge/ghcr.io-t2t--polish-blue)](https://github.com/pgrady1322/T2T-Polish/pkgs/container/t2t-polish)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](Dockerfile)
 [![License: Public Domain](https://img.shields.io/badge/license-Public%20Domain-lightgrey.svg)](LICENSE)
@@ -25,6 +27,7 @@ This repository includes everything needed to run the T2T polishing pipeline:
 | `tests/` | pytest test suite |
 | `CHANGELOG.md` | Release history |
 | `CONTRIBUTING.md` | Development and contribution guide |
+| `.github/workflows/` | CI, release, PyPI publish, and GHCR Docker publish workflows |
 | `legacy/` | Previous versions (v2, v3, v4 monolithic) and legacy conda/Singularity/SLURM files |
 
 ## What's New in Version 4
