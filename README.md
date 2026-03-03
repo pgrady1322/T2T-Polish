@@ -1,7 +1,7 @@
 # T2T-Automated-Polishing
 
 [![CI](https://github.com/pgrady1322/T2T-Polish/actions/workflows/ci.yml/badge.svg)](https://github.com/pgrady1322/T2T-Polish/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/t2t-polish)](https://pypi.org/project/t2t-polish/)
+[![PyPI version](https://badge.fury.io/py/t2t-polish.svg)](https://badge.fury.io/py/t2t-polish)
 [![GHCR](https://img.shields.io/badge/ghcr.io-t2t--polish-blue)](https://github.com/pgrady1322/T2T-Polish/pkgs/container/t2t-polish)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](Dockerfile)
