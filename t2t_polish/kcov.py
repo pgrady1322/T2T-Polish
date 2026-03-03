@@ -43,9 +43,7 @@ def sub_computekcov(args: object) -> tuple[str | None, str]:
     hist_file = f"{prefix}.histo"
     gs_lookup = os.path.join(f"{prefix}.genomescope_out", "lookup_table.txt")
     if resume and os.path.exists(hist_file) and os.path.exists(gs_lookup):
-        logger.info(
-            "compute_kcov: Resume enabled; skipping compute-kcov steps as results exist."
-        )
+        logger.info("compute_kcov: Resume enabled; skipping compute-kcov steps as results exist.")
         params_txt = os.path.join(f"{prefix}.genomescope_out", "params.txt")
         discovered_kcov = _parse_kcov_from_params(params_txt)
         fitted_hist = gs_lookup
@@ -68,19 +66,23 @@ def sub_computekcov(args: object) -> tuple[str | None, str]:
     gs_outdir = f"{prefix}.genomescope_out"
 
     # Step 1 — Jellyfish count
-    logger.info(
-        "compute_kcov: Step 1: Running Jellyfish K-mer counting (this may take a while)..."
-    )
+    logger.info("compute_kcov: Step 1: Running Jellyfish K-mer counting (this may take a while)...")
     conditional_run(
         outfile=jf_out,
         resume_flag=resume,
         step_desc="[computekcov step 1] Jellyfish K-mer counting",
         command=[
-            JELLYFISH, "count", "-C",
-            "-m", str(kmer_size),
-            "-s", str(jellyfish_hash_size),
-            "-t", str(threads),
-            "-o", jf_out,
+            JELLYFISH,
+            "count",
+            "-C",
+            "-m",
+            str(kmer_size),
+            "-s",
+            str(jellyfish_hash_size),
+            "-t",
+            str(threads),
+            "-o",
+            jf_out,
             reads,
         ],
     )
@@ -91,10 +93,13 @@ def sub_computekcov(args: object) -> tuple[str | None, str]:
         resume_flag=(resume and os.path.exists(jf_histo)),
         step_desc="[computekcov step 2] Jellyfish histogram generation",
         command=[
-            JELLYFISH, "histo",
-            "-t", str(threads),
+            JELLYFISH,
+            "histo",
+            "-t",
+            str(threads),
             jf_out,
-            "-o", jf_histo,
+            "-o",
+            jf_histo,
         ],
     )
 
@@ -104,9 +109,12 @@ def sub_computekcov(args: object) -> tuple[str | None, str]:
     )
     gs_cmd = [
         GENOMESCOPE,
-        "-i", jf_histo,
-        "-o", gs_outdir,
-        "-k", str(kmer_size),
+        "-i",
+        jf_histo,
+        "-o",
+        gs_outdir,
+        "-k",
+        str(kmer_size),
         "--fitted_hist",
     ]
     if ploidy == "haploid":

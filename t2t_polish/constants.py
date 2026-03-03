@@ -23,8 +23,15 @@ SAMTOOLS: str = "samtools"
 MERQURY_SH: str = "merqury.sh"
 
 TOOL_NAMES: list[str] = [
-    WINNOWMAP, FALCONC, MERYL, MERFIN, BCFTOOLS,
-    JELLYFISH, GENOMESCOPE, SAMTOOLS, MERQURY_SH,
+    WINNOWMAP,
+    FALCONC,
+    MERYL,
+    MERFIN,
+    BCFTOOLS,
+    JELLYFISH,
+    GENOMESCOPE,
+    SAMTOOLS,
+    MERQURY_SH,
 ]
 
 # Default quality scores for read correctors (Phred scale)

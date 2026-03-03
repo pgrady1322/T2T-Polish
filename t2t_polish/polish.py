@@ -188,8 +188,14 @@ def run_polish_iteration(
         resume_flag=(resume and resume_from <= 1),
         step_desc=f"[Iter {iteration_id} Step 1] Generation of Repetitive 15-mers from Genome",
         command=[
-            MERYL, "k=15", "count", f"threads={num_threads}",
-            f"memory={meryl_memory}", "output", paths.repet_db, draft_fasta,
+            MERYL,
+            "k=15",
+            "count",
+            f"threads={num_threads}",
+            f"memory={meryl_memory}",
+            "output",
+            paths.repet_db,
+            draft_fasta,
         ],
         max_log_lines=0,
     )
@@ -200,7 +206,11 @@ def run_polish_iteration(
             resume_flag=(resume and resume_from <= 1),
             step_desc=f"[Iter {iteration_id} Step 1B] Filter Repetitive 15-mers",
             command=[
-                MERYL, "print", "greater-than", "distinct=0.9998", paths.repet_db,
+                MERYL,
+                "print",
+                "greater-than",
+                "distinct=0.9998",
+                paths.repet_db,
             ],
             max_log_lines=0,
         )
@@ -217,11 +227,18 @@ def run_polish_iteration(
         resume_flag=(resume and resume_from <= 2),
         step_desc=f"[Iter {iteration_id} Step 2A] Winnowmap → SAM",
         command=[
-            WINNOWMAP, "-k", "15",
-            "-W", paths.repet_k15_txt,
-            "-t", str(num_threads),
-            "-ax", f"map-{winnowmap_seq_type}",
-            "--MD", draft_fasta, reads,
+            WINNOWMAP,
+            "-k",
+            "15",
+            "-W",
+            paths.repet_k15_txt,
+            "-t",
+            str(num_threads),
+            "-ax",
+            f"map-{winnowmap_seq_type}",
+            "--MD",
+            draft_fasta,
+            reads,
         ],
         stream=True,
     )
@@ -232,8 +249,14 @@ def run_polish_iteration(
         resume_flag=(resume and resume_from <= 2),
         step_desc=f"[Iter {iteration_id} Step 2B] Samtools view",
         command=[
-            SAMTOOLS, "view", "--threads", str(num_threads),
-            "-hb", "-T", draft_fasta, sam_file,
+            SAMTOOLS,
+            "view",
+            "--threads",
+            str(num_threads),
+            "-hb",
+            "-T",
+            draft_fasta,
+            sam_file,
         ],
         stream=True,
     )
@@ -243,8 +266,13 @@ def run_polish_iteration(
         resume_flag=(resume and resume_from <= 2),
         step_desc=f"[Iter {iteration_id} Step 2C] Samtools sort",
         command=[
-            SAMTOOLS, "sort", "--threads", str(num_threads),
-            "-o", winnowmap_sorted_bam, unsorted_bam,
+            SAMTOOLS,
+            "sort",
+            "--threads",
+            str(num_threads),
+            "-o",
+            winnowmap_sorted_bam,
+            unsorted_bam,
         ],
         stream=True,
     )
@@ -255,10 +283,17 @@ def run_polish_iteration(
         resume_flag=(resume and resume_from <= 3),
         step_desc=f"[Iter {iteration_id} Step 3] FalconC Filter of Alignment",
         command=[
-            FALCONC, "bam-filter-clipped", "-t", "-F", "0x104",
-            "--input-fn", winnowmap_sorted_bam,
-            "--output-fn", paths.sam,
-            "--output-count-fn", f"{paths.sam}.filtered_aln_count.txt",
+            FALCONC,
+            "bam-filter-clipped",
+            "-t",
+            "-F",
+            "0x104",
+            "--input-fn",
+            winnowmap_sorted_bam,
+            "--output-fn",
+            paths.sam,
+            "--output-count-fn",
+            f"{paths.sam}.filtered_aln_count.txt",
         ],
         stream=True,
     )
@@ -269,8 +304,14 @@ def run_polish_iteration(
         resume_flag=(resume and resume_from <= 3),
         step_desc=f"[Iter {iteration_id} Step 3 Convert] Samtools view FalconC SAM → BAM (unsorted)",
         command=[
-            SAMTOOLS, "view", "-@", str(num_threads), "-bh",
-            "-o", falconc_unsorted_bam, paths.sam,
+            SAMTOOLS,
+            "view",
+            "-@",
+            str(num_threads),
+            "-bh",
+            "-o",
+            falconc_unsorted_bam,
+            paths.sam,
         ],
         stream=True,
     )
@@ -280,8 +321,13 @@ def run_polish_iteration(
         resume_flag=(resume and resume_from <= 3),
         step_desc=f"[Iter {iteration_id} Step 3 Sort] Samtools sort FalconC BAM",
         command=[
-            SAMTOOLS, "sort", "-@", str(num_threads),
-            "-o", paths.bam, falconc_unsorted_bam,
+            SAMTOOLS,
+            "sort",
+            "-@",
+            str(num_threads),
+            "-o",
+            paths.bam,
+            falconc_unsorted_bam,
         ],
         stream=True,
     )
@@ -321,8 +367,11 @@ def run_polish_iteration(
     os.environ["DEEPVARIANT_TMPDIR"] = dv_tmp
 
     deepvariant_cmd = [
-        "singularity", "exec", "--nv",
-        "-B", f"{dv_tmp}:{dv_tmp}",
+        "singularity",
+        "exec",
+        "--nv",
+        "-B",
+        f"{dv_tmp}:{dv_tmp}",
         singularity_sif,
         "run_deepvariant",
         f"--model_type={deepseq_type}",
@@ -361,20 +410,34 @@ def run_polish_iteration(
         resume_flag=(resume and resume_from <= 5),
         step_desc=f"[Iter {iteration_id} Step 5] MerylDB from Genome Draft",
         command=[
-            MERYL, "-Q", f"k={k_mer_size}", f"threads={num_threads}",
-            "memory=50", "count", "output", paths.meryl_db, draft_fasta,
+            MERYL,
+            "-Q",
+            f"k={k_mer_size}",
+            f"threads={num_threads}",
+            "memory=50",
+            "count",
+            "output",
+            paths.meryl_db,
+            draft_fasta,
         ],
         max_log_lines=0,
     )
 
     merfin_cmd = [
-        MERFIN, "-polish",
-        "-vcf", paths.dv_vcf,
-        "-sequence", draft_fasta,
-        "-seqmers", paths.meryl_db,
-        "-readmers", readmers,
-        "-output", paths.merfin_base,
-        "-threads", str(num_threads),
+        MERFIN,
+        "-polish",
+        "-vcf",
+        paths.dv_vcf,
+        "-sequence",
+        draft_fasta,
+        "-seqmers",
+        paths.meryl_db,
+        "-readmers",
+        readmers,
+        "-output",
+        paths.merfin_base,
+        "-threads",
+        str(num_threads),
     ]
     if optimized and ideal_kcov and fitted_hist_location:
         merfin_cmd += ["-peak", str(ideal_kcov), "-prob", fitted_hist_location]
@@ -409,13 +472,18 @@ def run_polish_iteration(
             "BCFtools consensus Merfin-polished VCF → Final FASTA"
         ),
         command=[
-            BCFTOOLS, "consensus", paths.merfin_vcfgz,
-            "-f", draft_fasta, "-H", "1", "-o", paths.consensus,
+            BCFTOOLS,
+            "consensus",
+            paths.merfin_vcfgz,
+            "-f",
+            draft_fasta,
+            "-H",
+            "1",
+            "-o",
+            paths.consensus,
         ],
     )
-    logger.info(
-        "Completed iteration %d: consensus at %s", iteration_id, paths.consensus
-    )
+    logger.info("Completed iteration %d: consensus at %s", iteration_id, paths.consensus)
 
     if resume_from <= 6 and resume and cleanup:
         logger.info("Cleanup: Removing intermediate files to conserve space")
@@ -426,15 +494,20 @@ def run_polish_iteration(
 
     # ── Step 7 — Parallel QV: Merfin + Merqury ──────────────────────
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        logger.info(
-            "Running QV Module: QV and completeness estimation via Merfin and Merqury"
-        )
+        logger.info("Running QV Module: QV and completeness estimation via Merfin and Merqury")
         fut_merfin = executor.submit(
-            run_merfin_eval, paths.consensus, readmers, optimized,
-            ideal_kcov, fitted_hist_location,
+            run_merfin_eval,
+            paths.consensus,
+            readmers,
+            optimized,
+            ideal_kcov,
+            fitted_hist_location,
         )
         fut_merqury = executor.submit(
-            run_merqury_eval, paths.consensus, readmers, resume=resume,
+            run_merqury_eval,
+            paths.consensus,
+            readmers,
+            resume=resume,
         )
         merfin_output = fut_merfin.result()
         merqury_output = fut_merqury.result()
@@ -485,12 +558,12 @@ def _apply_resume_kcov(cfg: PolishConfig) -> PolishConfig:
             cfg.ideal_hpeak = meta.get("kcov")
         logger.info(
             "Resume: reloaded kcov=%s, fitted_hist=%s from %s",
-            meta.get("kcov"), cfg.fitted_hist, kcov_meta,
+            meta.get("kcov"),
+            cfg.fitted_hist,
+            kcov_meta,
         )
     if cfg.resume and cfg.resume_from > 0:
-        logger.warning(
-            "Both --resume and --resume-from set. Using --resume-from as priority."
-        )
+        logger.warning("Both --resume and --resume-from set. Using --resume-from as priority.")
     return cfg
 
 
@@ -527,7 +600,8 @@ def _resolve_chosen_peak(cfg: PolishConfig) -> float | str | None:
         peak = cfg.ideal_dpeak if cfg.ploidy == "haploid" else cfg.ideal_hpeak
         logger.info(
             "Resume: using existing coverage parameters with --ideal_peak=%s and --fitted_hist=%s",
-            peak, cfg.fitted_hist,
+            peak,
+            cfg.fitted_hist,
         )
         return peak
     return None
@@ -549,7 +623,8 @@ def _convert_fasta_reads(cfg: PolishConfig) -> PolishConfig:
     converted_fastq = cfg.prefix + ".converted_reads.fastq"
     logger.info(
         "Corrected Reads Detected: converting FASTA to FASTQ with quality Q=%d for corrector: %s",
-        quality_score, corrector,
+        quality_score,
+        corrector,
     )
     fasta_to_fastq(cfg.reads, converted_fastq, quality_score=quality_score)
     cfg.reads = converted_fastq
@@ -571,8 +646,10 @@ def _ensure_readmers(cfg: PolishConfig) -> PolishConfig:
     computed_readmers = cfg.prefix + ".readmers.meryl"
     logger.info("Running Module: Meryl Started: Readmers not provided")
     compute_readmers_db(
-        cfg.reads, computed_readmers,
-        k=31, threads=cfg.threads,
+        cfg.reads,
+        computed_readmers,
+        k=31,
+        threads=cfg.threads,
     )
     cfg.readmers = computed_readmers
     return cfg
@@ -713,9 +790,7 @@ def _run_iterations(cfg: PolishConfig, chosen_peak: float | str | None) -> None:
     _write_summaries(cfg, all_qv_records)
 
 
-def _write_summaries(
-    cfg: PolishConfig, all_qv_records: list[tuple[int, str, str]]
-) -> None:
+def _write_summaries(cfg: PolishConfig, all_qv_records: list[tuple[int, str, str]]) -> None:
     """Write text and optional JSON summaries of all iterations."""
     logger.info("====== FINAL QV/COMPLETENESS SUMMARY (MERFIN + MERQURY) ======")
     for iter_num, merfin_text, merqury_text in all_qv_records:
@@ -741,11 +816,13 @@ def _write_summaries(
 
         json_records = []
         for iter_num, merfin_text, merqury_text in all_qv_records:
-            json_records.append({
-                "iteration": iter_num,
-                "merfin": merfin_text,
-                "merqury": merqury_text,
-            })
+            json_records.append(
+                {
+                    "iteration": iter_num,
+                    "merfin": merfin_text,
+                    "merqury": merqury_text,
+                }
+            )
         json_summary = {
             "pipeline": "T2T-Polish",
             "version": __version__,

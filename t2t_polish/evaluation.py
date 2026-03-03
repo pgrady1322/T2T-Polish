@@ -15,7 +15,6 @@ import logging
 import os
 import re
 from pathlib import Path
-from subprocess import PIPE
 
 from t2t_polish.constants import MERFIN, MERQURY_SH
 from t2t_polish.runner import CommandResult, conditional_run, run_command
@@ -38,22 +37,32 @@ def run_merfin_eval(
 
     # ── histogram command ────────────────────────────────────────────
     hist_cmd = [
-        MERFIN, "-hist",
-        "-sequence", consensus,
-        "-readmers", readmers,
-        "-peak", peak_val,
-        "-output", hist_out,
+        MERFIN,
+        "-hist",
+        "-sequence",
+        consensus,
+        "-readmers",
+        readmers,
+        "-peak",
+        peak_val,
+        "-output",
+        hist_out,
     ]
     if optimized and fitted_hist_location:
         hist_cmd += ["-prob", fitted_hist_location]
 
     # ── completeness command ─────────────────────────────────────────
     comp_cmd = [
-        MERFIN, "-completeness",
-        "-sequence", consensus,
-        "-readmers", readmers,
-        "-peak", peak_val,
-        "-output", comp_out,
+        MERFIN,
+        "-completeness",
+        "-sequence",
+        consensus,
+        "-readmers",
+        readmers,
+        "-peak",
+        peak_val,
+        "-output",
+        comp_out,
     ]
     if optimized and fitted_hist_location:
         comp_cmd += ["-prob", fitted_hist_location]
@@ -103,9 +112,7 @@ def run_merqury_eval(
     )
 
     if not os.path.exists(outprefix + ".qv"):
-        logger.error(
-            "Merqury failed: %s did not produce %s", MERQURY_SH, outprefix + ".qv"
-        )
+        logger.error("Merqury failed: %s did not produce %s", MERQURY_SH, outprefix + ".qv")
         return "Merqury QV: ERROR\nMerqury Completeness: ERROR"
 
     # Extract QV (column 4)

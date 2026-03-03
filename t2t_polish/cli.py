@@ -49,9 +49,7 @@ def _build_parser() -> ShowHelpOnErrorArgumentParser:
             "Subcommands: polish, computekcov."
         ),
     )
-    parser.add_argument(
-        "--version", action="version", version=f"T2T-Polish v{__version__}"
-    )
+    parser.add_argument("--version", action="version", version=f"T2T-Polish v{__version__}")
 
     subparsers = parser.add_subparsers(dest="subcommand")
 
@@ -62,20 +60,31 @@ def _build_parser() -> ShowHelpOnErrorArgumentParser:
     )
     parser_ck.add_argument("-r", "--reads", required=True, help="Path to reads (FASTA/FASTQ).")
     parser_ck.add_argument(
-        "-o", "--prefix", default="KCoverage",
+        "-o",
+        "--prefix",
+        default="KCoverage",
         help="Prefix for Jellyfish/GenomeScope2 outputs (default: KCoverage)",
     )
     parser_ck.add_argument(
-        "-k", "--kmer_size", type=int, default=21,
+        "-k",
+        "--kmer_size",
+        type=int,
+        default=21,
         help="K-mer size (default: 21, recommended by Jellyfish / GenomeScope)",
     )
-    parser_ck.add_argument("-t", "--threads", type=int, default=8, help="Number of threads (default: 8)")
     parser_ck.add_argument(
-        "--ploidy", choices=["haploid", "diploid"], default="haploid",
+        "-t", "--threads", type=int, default=8, help="Number of threads (default: 8)"
+    )
+    parser_ck.add_argument(
+        "--ploidy",
+        choices=["haploid", "diploid"],
+        default="haploid",
         help="Genome ploidy for GenomeScope2. (default: haploid => ploidy = 1)",
     )
     parser_ck.add_argument(
-        "--jellyfish-hash-size", type=int, default=1_000_000_000,
+        "--jellyfish-hash-size",
+        type=int,
+        default=1_000_000_000,
         help="Hash size (number of k-mers) for Jellyfish counting (default: 1e9)",
     )
     parser_ck.set_defaults(func=sub_computekcov)
@@ -91,11 +100,14 @@ def _build_parser() -> ShowHelpOnErrorArgumentParser:
     # Required
     parser_pol.add_argument("-d", "--draft", required=True, help="Draft assembly FASTA")
     parser_pol.add_argument(
-        "-r", "--reads", required=True,
+        "-r",
+        "--reads",
+        required=True,
         help="Reads in FASTQ or FASTA format, GZIP is currently not accepted",
     )
     parser_pol.add_argument(
-        "--singularity_sif", required=True,
+        "--singularity_sif",
+        required=True,
         help="Path to GPU-accelerated DeepVariant Singularity image.",
     )
     parser_pol.add_argument(
@@ -110,57 +122,77 @@ def _build_parser() -> ShowHelpOnErrorArgumentParser:
         "-o", "--prefix", default="AutoPolisher", help="Output prefix (default: AutoPolisher)"
     )
     parser_pol.add_argument(
-        "-t", "--threads", type=int, default=32,
+        "-t",
+        "--threads",
+        type=int,
+        default=32,
         help="Number of threads. Equal to number of shards in DeepVariant. (default: 32)",
     )
     parser_pol.add_argument(
-        "--optimized", action="store_true",
+        "--optimized",
+        action="store_true",
         help="Enable automatic coverage/hist calculation (Merfin -peak / -prob).",
     )
     parser_pol.add_argument(
-        "--resume", action="store_true",
+        "--resume",
+        action="store_true",
         help=(
             "Resume from a partially completed run. If set, computationally expensive steps "
             "can be skipped if their output already exists."
         ),
     )
     parser_pol.add_argument(
-        "--resume-from", type=int, default=0,
+        "--resume-from",
+        type=int,
+        default=0,
         help=(
             "Resume from a specific polishing step "
             "(0=all, 1=Meryl DB, 2=Winnowmap, 3=FalconC, 4=DeepVariant, 5=Merfin, 6=Consensus)"
         ),
     )
     parser_pol.add_argument(
-        "-s", "--seq_type",
+        "-s",
+        "--seq_type",
         help="Optionally set winnowmap read type (pb, ont). If not set, we may guess from --deepseq_type.",
     )
     parser_pol.add_argument(
-        "--dv_tmp_dir", default=None,
+        "--dv_tmp_dir",
+        default=None,
         help="Directory to use for DeepVariant intermediate results (default: <iteration_folder>/dv_tmp)",
     )
     parser_pol.add_argument(
-        "--read_corrector", choices=["hifiasm", "herro", "flye", "unknown"],
+        "--read_corrector",
+        choices=["hifiasm", "herro", "flye", "unknown"],
         help="Specify the read corrector used to assign default quality scores for FASTA input.",
     )
     parser_pol.add_argument(
-        "-m", "--readmers",
+        "-m",
+        "--readmers",
         help="Meryl DB of read k-mers. Calculated automatically with --optimized.",
     )
     parser_pol.add_argument(
-        "-k", "--kmer_size", type=int, default=DEFAULT_KMER_SIZE,
+        "-k",
+        "--kmer_size",
+        type=int,
+        default=DEFAULT_KMER_SIZE,
         help="K-mer size for Meryl. (default: 31, recommended by developers)",
     )
     parser_pol.add_argument(
-        "-i", "--iterations", type=int, default=3,
+        "-i",
+        "--iterations",
+        type=int,
+        default=3,
         help="Number of polishing iterations (default: 3)",
     )
     parser_pol.add_argument(
-        "--meryl-memory", type=int, default=50,
+        "--meryl-memory",
+        type=int,
+        default=50,
         help="Maximum memory (in GB) to hand off to Meryl (default: 50)",
     )
     parser_pol.add_argument(
-        "--cleanup", action="store_true",
+        "--cleanup",
+        action="store_true",
         help="If set, intermediate files (SAMs, uncompressed VCFs) are deleted after use to save disk space.",
     )
     parser_pol.add_argument(
@@ -168,24 +200,29 @@ def _build_parser() -> ShowHelpOnErrorArgumentParser:
         help="Path to write detailed log output (default: none—only console)",
     )
     parser_pol.add_argument(
-        "--quiet", action="store_true",
+        "--quiet",
+        action="store_true",
         help="Suppress INFO-level logs to console; only WARNING+ERROR will print",
     )
 
     # Peak settings
     parser_pol.add_argument(
-        "--ideal_dpeak", type=float,
+        "--ideal_dpeak",
+        type=float,
         help="Coverage peak to use for haploid assemblies (was --peak_haploid).",
     )
     parser_pol.add_argument(
-        "--ideal_hpeak", type=float,
+        "--ideal_hpeak",
+        type=float,
         help="Coverage peak to use for diploid assemblies (was --peak_diploid).",
     )
     parser_pol.add_argument(
         "--fitted_hist", help="Fitted histogram location if not run as optimized"
     )
     parser_pol.add_argument(
-        "--ploidy", choices=["haploid", "diploid"], default="haploid",
+        "--ploidy",
+        choices=["haploid", "diploid"],
+        default="haploid",
         help="Assembly ploidy (haploid or diploid) (default: haploid)",
     )
 
@@ -195,7 +232,8 @@ def _build_parser() -> ShowHelpOnErrorArgumentParser:
         help="Optional JSON config file with overrides to defaults, instead of command line entries.",
     )
     parser_pol.add_argument(
-        "--json-summary", action="store_true",
+        "--json-summary",
+        action="store_true",
         help="Emit a machine-readable JSON summary of each iteration's QV, completeness, and runtime.",
     )
     parser_pol.set_defaults(func=sub_polish)

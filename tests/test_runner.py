@@ -37,9 +37,7 @@ class TestCommandResult:
 class TestRunCommand:
     @patch("t2t_polish.runner.subprocess.run")
     def test_success(self, mock_run):
-        mock_run.return_value = MagicMock(
-            stdout="hello\n", stderr="", returncode=0
-        )
+        mock_run.return_value = MagicMock(stdout="hello\n", stderr="", returncode=0)
         result = run_command(["echo", "hello"], description="echo test")
         assert result.returncode == 0
         assert "hello" in result.stdout
@@ -55,9 +53,7 @@ class TestRunCommand:
 
     @patch("t2t_polish.runner.subprocess.run")
     def test_logfile_written(self, mock_run, tmp_path):
-        mock_run.return_value = MagicMock(
-            stdout="data\n", stderr="", returncode=0
-        )
+        mock_run.return_value = MagicMock(stdout="data\n", stderr="", returncode=0)
         logfile = str(tmp_path / "cmd.log")
         run_command(["echo"], description="log test", logfile=logfile)
         assert os.path.exists(logfile)
@@ -72,9 +68,7 @@ class TestRunCommand:
 
     @patch("t2t_polish.runner.subprocess.run")
     def test_timeout_passed_to_subprocess(self, mock_run):
-        mock_run.return_value = MagicMock(
-            stdout="ok\n", stderr="", returncode=0
-        )
+        mock_run.return_value = MagicMock(stdout="ok\n", stderr="", returncode=0)
         run_command(["echo"], description="timeout passthrough", timeout=60)
         _, kwargs = mock_run.call_args
         assert kwargs["timeout"] == 60
@@ -159,9 +153,11 @@ class TestConditionalRun:
         proc = MagicMock()
         proc.communicate.side_effect = subprocess.TimeoutExpired(cmd="slow", timeout=3)
         proc.kill.return_value = None
+
         # After kill, communicate succeeds
         def _comm_after_kill(*a, **kw):
             return (None, "")
+
         proc.communicate.side_effect = [
             subprocess.TimeoutExpired(cmd="slow", timeout=3),
             (None, ""),

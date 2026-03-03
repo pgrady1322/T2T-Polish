@@ -7,7 +7,7 @@ Unit tests for t2t_polish.evaluation (Merfin and Merqury QV helpers).
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from t2t_polish.evaluation import _read_column, run_merfin_eval, run_merqury_eval
 from t2t_polish.runner import CommandResult
@@ -54,11 +54,11 @@ class TestRunMerfinEval:
     @patch("t2t_polish.evaluation.run_command")
     def test_handles_failure(self, mock_rc):
         mock_rc.return_value = CommandResult(
-            stdout="", stderr="error msg", returncode=1,
+            stdout="",
+            stderr="error msg",
+            returncode=1,
         )
-        result = run_merfin_eval(
-            "fake.fa", "fake.meryl", False, None, None
-        )
+        result = run_merfin_eval("fake.fa", "fake.meryl", False, None, None)
         # Empty on failure — should not crash
         assert isinstance(result, str)
 

@@ -74,6 +74,7 @@ class TestPolishConfig:
 
     def test_from_args_defaults(self):
         """Missing attributes on the namespace should fall back to defaults."""
+
         class MinimalArgs:
             draft = "d.fa"
             reads = "r.fq"

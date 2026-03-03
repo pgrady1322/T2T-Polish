@@ -60,9 +60,7 @@ def run_command(
         lines = text.splitlines()
         if len(lines) <= limit:
             return text
-        return "\n".join(
-            lines[:limit] + [f"... ({len(lines) - limit} more lines truncated)"]
-        )
+        return "\n".join(lines[:limit] + [f"... ({len(lines) - limit} more lines truncated)"])
 
     if description:
         logger.info("Running: %s", description)

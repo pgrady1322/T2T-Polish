@@ -40,14 +40,21 @@ class TestPolishSubcommand:
         for p in (draft, reads, sif):
             with open(p, "w") as f:
                 f.write("dummy")
-        args = parser.parse_args([
-            "polish",
-            "-d", draft,
-            "-r", reads,
-            "--singularity_sif", sif,
-            "-t", "8",
-            "-i", "2",
-        ])
+        args = parser.parse_args(
+            [
+                "polish",
+                "-d",
+                draft,
+                "-r",
+                reads,
+                "--singularity_sif",
+                sif,
+                "-t",
+                "8",
+                "-i",
+                "2",
+            ]
+        )
         assert args.draft == draft
         assert args.threads == 8
         assert args.iterations == 2
@@ -82,11 +89,15 @@ class TestComputeKcovSubcommand:
         reads = str(tmp_path / "reads.fq")
         with open(reads, "w") as f:
             f.write("dummy")
-        args = parser.parse_args([
-            "computekcov",
-            "-r", reads,
-            "-t", "4",
-        ])
+        args = parser.parse_args(
+            [
+                "computekcov",
+                "-r",
+                reads,
+                "-t",
+                "4",
+            ]
+        )
         assert args.reads == reads
         assert args.threads == 4
 

@@ -50,19 +50,10 @@ def validate_dependencies() -> None:
 
 def needs_kcov(args: object) -> bool:
     """Return *True* when the polishing run requires automatic k-mer coverage."""
-    return (
-        getattr(args, "optimized", False)
-        and (
-            not getattr(args, "fitted_hist", None)
-            or (
-                getattr(args, "ploidy", "") == "haploid"
-                and not getattr(args, "ideal_dpeak", None)
-            )
-            or (
-                getattr(args, "ploidy", "") == "diploid"
-                and not getattr(args, "ideal_hpeak", None)
-            )
-        )
+    return getattr(args, "optimized", False) and (
+        not getattr(args, "fitted_hist", None)
+        or (getattr(args, "ploidy", "") == "haploid" and not getattr(args, "ideal_dpeak", None))
+        or (getattr(args, "ploidy", "") == "diploid" and not getattr(args, "ideal_hpeak", None))
     )
 
 
@@ -152,9 +143,7 @@ def setup_logging(log_file: str | None = None, quiet: bool = False) -> None:
 # ── FASTA ↔ FASTQ ───────────────────────────────────────────────────
 
 
-def fasta_to_fastq(
-    fasta_file: str, fastq_file: str, quality_score: int = 40
-) -> None:
+def fasta_to_fastq(fasta_file: str, fastq_file: str, quality_score: int = 40) -> None:
     """Convert a FASTA file to FASTQ using a flat quality score."""
     qual_char = chr(quality_score + 33)
     with open(fasta_file) as fa, open(fastq_file, "w") as fq:
@@ -167,9 +156,7 @@ def fasta_to_fastq(
                     s = "".join(seq)
                     fq.write(f"@{name}\n{s}\n+\n{qual_char * len(s)}\n")
                 elif name and not seq:
-                    logger.warning(
-                        "FASTA record %s has no sequence data and was skipped.", name
-                    )
+                    logger.warning("FASTA record %s has no sequence data and was skipped.", name)
                 name = line[1:]
                 seq = []
             else:
@@ -178,17 +165,13 @@ def fasta_to_fastq(
             s = "".join(seq)
             fq.write(f"@{name}\n{s}\n+\n{qual_char * len(s)}\n")
         elif name and not seq:
-            logger.warning(
-                "FASTA record %s has no sequence data and was skipped.", name
-            )
+            logger.warning("FASTA record %s has no sequence data and was skipped.", name)
 
 
 # ── Auto-compute readmers ───────────────────────────────────────────
 
 
-def compute_readmers_db(
-    reads: str, output_readmers: str, k: int = 31, threads: int = 8
-) -> None:
+def compute_readmers_db(reads: str, output_readmers: str, k: int = 31, threads: int = 8) -> None:
     """Build a Meryl k-mer database from *reads* if it doesn't already exist."""
     cmd = [
         MERYL,

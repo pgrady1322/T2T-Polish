@@ -21,7 +21,6 @@ from t2t_polish.utils import (
     validate_dependencies,
 )
 
-
 # ── validate_dependencies ────────────────────────────────────────────
 
 
@@ -104,16 +103,15 @@ class TestSetupLogging:
         log_file = str(tmp_path / "test.log")
         setup_logging(log_file=log_file)
         root = logging.getLogger()
-        assert any(
-            isinstance(h, logging.FileHandler) for h in root.handlers
-        )
+        assert any(isinstance(h, logging.FileHandler) for h in root.handlers)
 
     def test_quiet_flag(self):
         setup_logging(quiet=True)
         root = logging.getLogger()
         stream_handlers = [
-            h for h in root.handlers if isinstance(h, logging.StreamHandler)
-            and not isinstance(h, logging.FileHandler)
+            h
+            for h in root.handlers
+            if isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler)
         ]
         for sh in stream_handlers:
             assert sh.level >= logging.WARNING
