@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM --platform=linux/amd64 ubuntu:22.04
+FROM ubuntu:22.04
 
 # Avoid tzdata interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -22,8 +22,10 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 ENV PATH=$CONDA_DIR/bin:$PATH
 
 # 3. Create and populate the bioinformatics environment
-RUN conda update -n base -c defaults conda && \
-    conda create -y -n apv4-env -c defaults -c conda-forge -c bioconda \
+#    Use conda-forge + bioconda only (no defaults) with strict channel priority
+#    to avoid cross-channel conflicts.
+RUN conda config --set channel_priority strict && \
+    conda create -y -n apv4-env -c conda-forge -c bioconda \
       python=3.12 \
       meryl \
       winnowmap \
