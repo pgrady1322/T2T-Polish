@@ -51,7 +51,7 @@ Genome assembly accuracy is automatically assessed at each iteration using both 
 
 ## How to Run (Quick Start)
 
-**Version 4.1.1** can now be installed via PyPI. Otherwise, it is installed via GitHub. T2T-Polish is a Python package with the `t2t-polish` CLI entry point.
+**Version 4.1.2** can now be installed via PyPI. Otherwise, it is installed via GitHub. T2T-Polish is a Python package with the `t2t-polish` CLI entry point.
 
 ### Basic Usage
 
@@ -232,7 +232,7 @@ Pre-built images are published to the GitHub Container Registry on every release
 docker pull ghcr.io/pgrady1322/t2t-polish:latest
 
 # Or pull a specific version
-docker pull ghcr.io/pgrady1322/t2t-polish:4.1.1
+docker pull ghcr.io/pgrady1322/t2t-polish:4.1.2
 
 # Run with Docker
 docker run -it --rm \

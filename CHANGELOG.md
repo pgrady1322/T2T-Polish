@@ -5,6 +5,13 @@ All notable changes to T2T-Polish will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.2] — 2026-03-03
+
+### Fixed
+
+- README: updated installation directions for PyPI, GHCR, and modern Conda
+  (v4.1.1 was published to PyPI with stale docs).
+
 ## [4.1.1] — 2026-03-03
 
 ### Added
@@ -92,6 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI pipeline.
 - Initial test suite.
 
+[4.1.2]: https://github.com/arangrhie/T2T-Polish/compare/v4.1.1...v4.1.2
 [4.1.1]: https://github.com/arangrhie/T2T-Polish/compare/v4.1.0...v4.1.1
 [4.1.0]: https://github.com/arangrhie/T2T-Polish/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/arangrhie/T2T-Polish/releases/tag/v4.0.0
