@@ -15,27 +15,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     samtools bcftools && \
     rm -rf /var/lib/apt/lists/*
 
-# 2. Install Miniconda
+# 2. Install Miniforge (comes with mamba + conda-forge default channel)
 ENV CONDA_DIR=/opt/conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/conda.sh && \
+RUN wget --quiet https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -O /tmp/conda.sh && \
     bash /tmp/conda.sh -b -p $CONDA_DIR && rm /tmp/conda.sh
 ENV PATH=$CONDA_DIR/bin:$PATH
 
 # 3. Create and populate the bioinformatics environment
-#    Use conda-forge + bioconda only (no defaults) with strict channel priority
-#    to avoid cross-channel conflicts.
-RUN conda config --set channel_priority strict && \
-    conda create -y -n apv4-env -c conda-forge -c bioconda \
-      python=3.12 \
+#    Use mamba for faster, more reliable dependency resolution.
+#    Install in two stages: core tools first, then niche packages.
+RUN mamba create -y -n apv4-env -c conda-forge -c bioconda \
+      python=3.11 \
       meryl \
       winnowmap \
       kmer-jellyfish \
       genomescope2 \
       samtools \
       pysam \
-      tqdm \
+      tqdm && \
+    mamba install -y -n apv4-env -c conda-forge -c bioconda \
       pb-falconc && \
-    conda clean --all -y
+    mamba clean --all -y
 
 # 4. Build MerFin v1.1 from source
 RUN git clone --depth 1 --branch v1.1 --recurse-submodules \
