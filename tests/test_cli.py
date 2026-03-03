@@ -27,7 +27,7 @@ class TestBuildParser:
             parser.parse_args(["--version"])
         assert exc_info.value.code == 0
         captured = capsys.readouterr()
-        assert "4.1.0" in captured.out
+        assert "4.1.1" in captured.out
 
 
 # ── polish subcommand ────────────────────────────────────────────────

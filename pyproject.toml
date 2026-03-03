@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "t2t-polish"
-version = "4.1.0"
+version = "4.1.1"
 description = "Fully automatic, iterative K-mer based polishing of genome assemblies"
 readme = "README.md"
 license = {text = "Public Domain (U.S. Government Work - NHGRI/NIH)"}

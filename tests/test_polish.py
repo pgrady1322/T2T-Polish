@@ -402,7 +402,7 @@ class TestWriteSummaries:
         assert json_file.exists()
         data = json.loads(json_file.read_text())
         assert data["pipeline"] == "T2T-Polish"
-        assert data["version"] == "4.1.0"
+        assert data["version"] == "4.1.1"
         assert len(data["records"]) == 1
 
 
