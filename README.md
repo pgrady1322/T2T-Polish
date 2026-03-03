@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/arangrhie/T2T-Polish/actions/workflows/ci.yml/badge.svg)](https://github.com/arangrhie/T2T-Polish/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Singularity](https://img.shields.io/badge/singularity-container-blue.svg)](APv4_Singularity.def)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](Dockerfile)
 [![License: Public Domain](https://img.shields.io/badge/license-Public%20Domain-lightgrey.svg)](LICENSE)
 
@@ -16,22 +15,21 @@ For further details on exact application to T2T-CHM13, read the corresponding se
 
 ## Repository Contents
 
-This repository includes everything needed to run the APv4 polishing pipeline:
+This repository includes everything needed to run the T2T polishing pipeline:
 
 | File | Description |
 |------|-------------|
 | `t2t_polish/` | Modular Python package (CLI, constants, runner, polishing, evaluation, k-cov) |
-| `APv4.py` | Backward-compatible shim that delegates to `t2t_polish.cli:main()` |
-| `APv4.yml` | Conda environment specification with all dependencies |
+| `pyproject.toml` | PEP 517/518 project metadata and build configuration |
 | `Dockerfile` | Docker container definition for portable deployment |
-| `APv4_Singularity.def` | Singularity container definition for HPC environments |
-| `APv4_SLURM.sh` | Example SLURM submission script for cluster computing |
 | `tests/` | pytest test suite |
-| `legacy/` | Previous versions (v2, v3) for reference |
+| `CHANGELOG.md` | Release history |
+| `CONTRIBUTING.md` | Development and contribution guide |
+| `legacy/` | Previous versions (v2, v3, v4 monolithic) and legacy conda/Singularity/SLURM files |
 
 ## What's New in Version 4
 
-**APv4** represents a major reimplementation of the T2T polishing pipeline:
+**T2T-Polish v4** represents a major reimplementation of the T2T polishing pipeline:
 
 - **Python-based**: Complete rewrite in Python for improved speed, error handling, and maintainability
 - **DeepVariant Integration**: Replaced Racon with GPU-accelerated DeepVariant for more accurate variant calling
@@ -50,16 +48,19 @@ Genome assembly accuracy is automatically assessed at each iteration using both 
 
 ## How to Run (Quick Start)
 
-**Version 4** is implemented as a Python script (`APv4.py`) with improved performance and GPU acceleration support.
+**Version 4** is installed as a Python package with the `t2t-polish` CLI entry point.
 
 ### Basic Usage
 
 ```bash
+# Install from the repository
+pip install .
+
 # Run diagnostics to check dependencies
-python APv4.py diagnostics
+t2t-polish diagnostics
 
 # Compute optimal k-mer coverage (recommended first step)
-python APv4.py computekcov \
+t2t-polish computekcov \
     -r <reads.fastq> \
     -o <output_prefix> \
     -k 21 \
@@ -67,7 +68,7 @@ python APv4.py computekcov \
     --ploidy haploid
 
 # Run polishing with optimized parameters (automatic k-cov calculation)
-python APv4.py polish \
+t2t-polish polish \
     -d <draft.fasta> \
     -r <reads.fastq> \
     --singularity_sif <path/to/deepvariant.sif> \
@@ -78,7 +79,7 @@ python APv4.py polish \
     --optimized
 
 # Or run polishing with manual k-mer coverage parameters
-python APv4.py polish \
+t2t-polish polish \
     -d <draft.fasta> \
     -r <reads.fastq> \
     -m <readmers.meryl> \
@@ -93,30 +94,32 @@ python APv4.py polish \
 
 ### Subcommands
 
-**APv4.py** has two main subcommands:
+`t2t-polish` has three subcommands:
 
 - **`computekcov`** - Calculate optimal k-mer coverage and fitted histogram using Jellyfish + GenomeScope2
 - **`polish`** - Run iterative polishing with DeepVariant-based variant calling
+- **`diagnostics`** - Check tool availability, disk space, and Python packages
 
 For detailed help:
 ```bash
-python APv4.py --help
-python APv4.py computekcov --help
-python APv4.py polish --help
+t2t-polish --help
+t2t-polish computekcov --help
+t2t-polish polish --help
 ```
 
 ### Quick Reference: Common Use Cases
 
 **Local workstation (with GPU):**
 ```bash
-python APv4.py polish -d draft.fasta -r reads.fq \
+t2t-polish polish -d draft.fasta -r reads.fq \
     --singularity_sif deepvariant.sif --deepseq_type PACBIO \
     --optimized -t 32 -i 3
 ```
 
 **HPC cluster (SLURM):**
 ```bash
-sbatch APv4_SLURM.sh
+# See legacy/T2T_Polish_v4/APv4_SLURM.sh for an example submission script
+sbatch my_polish_job.sh
 ```
 
 **Docker container:**
@@ -128,7 +131,7 @@ docker run -v $(pwd):/data t2t-polisher:v4 polish \
 
 **Resume interrupted run:**
 ```bash
-python APv4.py polish -d draft.fasta -r reads.fq \
+t2t-polish polish -d draft.fasta -r reads.fq \
     --singularity_sif deepvariant.sif --resume
 ```
 
@@ -175,14 +178,15 @@ python APv4.py polish -d draft.fasta -r reads.fq \
 
 ### Conda Environment (Most tested, recommended)
 
-A dedicated Conda environment is highly recommended. A YML file (`APv4.yml`) is available in this repo for easy setup:
+A dedicated Conda environment is highly recommended. A legacy YML file is available in `legacy/T2T_Polish_v4/APv4.yml` for reference:
 
 ```bash
-conda env create -f APv4.yml -n t2t-auto-polisher-v4
+conda env create -f legacy/T2T_Polish_v4/APv4.yml -n t2t-auto-polisher-v4
 conda activate t2t-auto-polisher-v4
+pip install .   # Install the t2t-polish CLI entry point
 ```
 
-The `APv4.yml` file includes all necessary dependencies:
+The environment includes all necessary dependencies:
 - Core tools: Winnowmap, FalconC, Meryl, Merfin, Samtools, BCFtools
 - K-mer analysis: Jellyfish, GenomeScope2
 - Python packages: pysam, tqdm
@@ -209,18 +213,22 @@ docker run -it --rm \
     -t 32
 ```
 
-**Note**: The Docker container includes the APv4 pipeline and all dependencies except DeepVariant, which must be provided as a Singularity image.
+**Note**: The Docker container includes the t2t-polish pipeline and all dependencies except DeepVariant, which must be provided as a Singularity image.
 
 #### Singularity
 
-A Singularity definition file (`APv4_Singularity.def`) is provided for HPC environments:
+A legacy Singularity definition file is available at `legacy/T2T_Polish_v4/APv4_Singularity.def` for reference. You can adapt it or build from the Dockerfile:
 
 ```bash
-# Build the Singularity container
-singularity build APv4.sif APv4_Singularity.def
+# Build a Singularity image from Docker
+singularity build t2t-polish.sif docker-daemon://t2t-polisher:v4
+
+# Or build Docker first, then convert
+docker build -t t2t-polisher:v4 .
+singularity build t2t-polish.sif docker-daemon://t2t-polisher:v4
 
 # Run with Singularity
-singularity exec APv4.sif APv4.py polish \
+singularity exec t2t-polish.sif t2t-polish polish \
     -d draft.fasta \
     -r reads.fastq \
     --singularity_sif deepvariant_gpu.sif \
@@ -228,8 +236,8 @@ singularity exec APv4.sif APv4.py polish \
     -t 32
 ```
 
-The Singularity container includes:
-- Complete APv4 environment with all dependencies
+The container includes:
+- Complete t2t-polish environment with all dependencies
 - Merfin v1.1 built from source
 - Merqury for QV assessment
 - Optimized for HPC cluster deployment
@@ -253,11 +261,11 @@ singularity build deepvariant_gpu.sif docker://google/deepvariant:1.6.1-gpu
 
 ### HPC/SLURM Example
 
-A SLURM submission script example (`APv4_SLURM.sh`) is provided for cluster environments:
+A legacy SLURM script is available at `legacy/T2T_Polish_v4/APv4_SLURM.sh` for reference. Here is an updated example:
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=APv4_Polish
+#SBATCH --job-name=t2t_polish
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH -c 32
@@ -267,7 +275,7 @@ A SLURM submission script example (`APv4_SLURM.sh`) is provided for cluster envi
 #SBATCH -o %x_%j.stdout
 #SBATCH -e %x_%j.stderr
 
-python APv4.py polish \
+t2t-polish polish \
     -d draft.fasta \
     -r reads.fastq \
     --optimized \
@@ -278,13 +286,13 @@ python APv4.py polish \
 
 Submit with:
 ```bash
-sbatch APv4_SLURM.sh
+sbatch my_polish_job.sh
 ```
 
 Key SLURM considerations:
 - Request GPU partition for DeepVariant acceleration
 - Allocate sufficient memory (200GB+ for large genomes)
-- Match thread count (`-c`) with APv4 threads (`-t`)
+- Match thread count (`-c`) with t2t-polish threads (`-t`)
 - Use `--resume` flag for long-running jobs that may timeout
 
 ### Manual Installation
@@ -292,7 +300,7 @@ Key SLURM considerations:
 If installing dependencies manually or using HPC modules, ensure all tools are available on PATH. You can verify dependencies by running:
 
 ```bash
-python APv4.py --diagnostics
+t2t-polish diagnostics
 ```
 
 This will check for all required tools and display their versions.
@@ -321,18 +329,18 @@ These can be changed to full paths if necessary.
 
 ### Resume Capability
 
-APv4 includes robust checkpoint/resume functionality. If a run is interrupted, you can resume from the last completed step:
+t2t-polish includes robust checkpoint/resume functionality. If a run is interrupted, you can resume from the last completed step:
 
 ```bash
 # Resume from last checkpoint
-python APv4.py polish \
+t2t-polish polish \
     -d <draft.fasta> \
     -r <reads.fastq> \
     --singularity_sif <deepvariant.sif> \
     --resume
 
 # Resume from a specific step (0=all, 1=Meryl, 2=Winnowmap, 3=FalconC, 4=DeepVariant, 5=Merfin, 6=Consensus)
-python APv4.py polish \
+t2t-polish polish \
     -d <draft.fasta> \
     -r <reads.fastq> \
     --singularity_sif <deepvariant.sif> \
@@ -349,7 +357,7 @@ When using `--optimized`, the pipeline automatically:
 4. Saves coverage parameters to JSON for reliable resume
 
 ```bash
-python APv4.py polish \
+t2t-polish polish \
     -d <draft.fasta> \
     -r <reads.fastq> \
     --singularity_sif <deepvariant.sif> \
@@ -360,7 +368,7 @@ python APv4.py polish \
 
 ### Quality Assessment
 
-APv4 automatically runs both Merfin and Merqury evaluations in parallel after each iteration, providing:
+t2t-polish automatically runs both Merfin and Merqury evaluations in parallel after each iteration, providing:
 - **QV (Quality Value)**: Phred-scaled base accuracy
 - **Completeness**: Percentage of expected k-mers present
 - **Per-iteration tracking**: Monitor improvement across iterations
@@ -376,14 +384,14 @@ Comprehensive logging is built-in:
 
 ```bash
 # Enable detailed logging to file
-python APv4.py polish \
+t2t-polish polish \
     -d <draft.fasta> \
     -r <reads.fastq> \
     --singularity_sif <deepvariant.sif> \
     --log-file polishing.log
 
 # Quiet mode (warnings only to console)
-python APv4.py polish \
+t2t-polish polish \
     -d <draft.fasta> \
     -r <reads.fastq> \
     --singularity_sif <deepvariant.sif> \
@@ -396,7 +404,7 @@ Control intermediate file retention:
 
 ```bash
 # Automatically clean up intermediate files after each iteration
-python APv4.py polish \
+t2t-polish polish \
     -d <draft.fasta> \
     -r <reads.fastq> \
     --singularity_sif <deepvariant.sif> \
@@ -405,7 +413,7 @@ python APv4.py polish \
 
 ## Output Files
 
-APv4 generates organized output with clear naming:
+t2t-polish generates organized output with clear naming:
 
 ```
 <prefix>.iter_0.consensus.fasta           # Initial draft (iteration 0)
@@ -431,7 +439,7 @@ APv4 generates organized output with clear naming:
 If DeepVariant fails with GPU errors:
 1. Verify NVIDIA drivers: `nvidia-smi`
 2. Check CUDA compatibility with DeepVariant version
-3. Ensure Singularity has `--nv` flag (automatically added by APv4)
+3. Ensure Singularity has `--nv` flag (automatically added by t2t-polish)
 4. Try CPU-only DeepVariant image (slower but more compatible)
 
 ### Memory Issues
@@ -445,19 +453,19 @@ If jobs fail due to memory:
 
 Run diagnostics to check dependencies:
 ```bash
-python APv4.py diagnostics
+t2t-polish diagnostics
 ```
 
 For missing tools:
 - **Conda**: Ensure environment is activated
 - **Docker**: Tools are pre-installed in container
 - **Singularity**: All tools except DeepVariant are included
-- **Manual**: Add tool paths to system PATH or modify `APv4.py`
+- **Manual**: Add tool paths to system PATH or modify `t2t_polish/constants.py`
 
 ### Resume Issues
 
 If resume fails:
-1. Check for corrupted BAM/VCF files (APv4 validates automatically)
+1. Check for corrupted BAM/VCF files (t2t-polish validates automatically)
 2. Verify `<prefix>.kcov.json` exists when using `--optimized`
 3. Use `--resume-from N` to skip specific steps
 4. Delete problematic iteration folder and restart
@@ -478,8 +486,8 @@ Choose the deployment method that best fits your environment:
 
 | Environment | Recommended Method | Notes |
 |-------------|-------------------|-------|
-| **Local workstation with GPU** | Conda (`APv4.yml`) | Direct installation, easiest to customize |
-| **HPC cluster (SLURM/PBS)** | Singularity (`APv4_Singularity.def`) | Best for shared environments, reproducible |
+| **Local workstation with GPU** | Conda + `pip install .` | Direct installation, easiest to customize |
+| **HPC cluster (SLURM/PBS)** | Singularity (from Dockerfile) | Best for shared environments, reproducible |
 | **Cloud computing** | Docker (`Dockerfile`) | Portable across cloud providers |
 | **Testing/Development** | Conda | Fast iteration, easy debugging |
 | **Production pipelines** | Singularity or Docker | Reproducible, version-controlled |
@@ -530,7 +538,7 @@ If you're upgrading from the shell-based v3 pipeline:
 automated-polishing_v3.sh fullauto -d draft.fasta -r reads.fq.gz -s pb -t 32
 
 # New (v4)
-python APv4.py polish -d draft.fasta -r reads.fq \
+t2t-polish polish -d draft.fasta -r reads.fq \
     --singularity_sif deepvariant.sif --deepseq_type PACBIO \
     --optimized -t 32
 ```
@@ -542,7 +550,7 @@ automated-polishing_v3.sh optimizedpolish -d draft.fasta -r reads.fq.gz \
     -s pb --fitted_hist lookup_table.txt --peak 106.7
 
 # New (v4)
-python APv4.py polish -d draft.fasta -r reads.fq \
+t2t-polish polish -d draft.fasta -r reads.fq \
     --singularity_sif deepvariant.sif --deepseq_type PACBIO \
     --fitted_hist lookup_table.txt --ideal_dpeak 106.7
 ```

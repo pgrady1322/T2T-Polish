@@ -52,7 +52,6 @@ RUN git clone --depth 1 https://github.com/marbl/merqury.git /opt/Merqury && \
 # 6. Copy the T2T-Polish package and install it
 WORKDIR /opt/t2t-polish
 COPY pyproject.toml .
-COPY APv4.py .
 COPY t2t_polish/ t2t_polish/
 
 # Install in the conda env so the 't2t-polish' console script is available

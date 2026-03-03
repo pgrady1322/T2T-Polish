@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-T2T-Polish v4.0 — constants.py
+T2T-Polish v4.1 — constants.py
 
 Shared constants: tool names, default quality scores, and k-mer size.
 
