@@ -1,6 +1,6 @@
 # T2T-Automated-Polishing
 
-[![CI](https://github.com/arangrhie/T2T-Polish/actions/workflows/ci.yml/badge.svg)](https://github.com/arangrhie/T2T-Polish/actions/workflows/ci.yml)
+[![CI](https://github.com/pgrady1322/T2T-Polish/actions/workflows/ci.yml/badge.svg)](https://github.com/pgrady1322/T2T-Polish/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](Dockerfile)
 [![License: Public Domain](https://img.shields.io/badge/license-Public%20Domain-lightgrey.svg)](LICENSE)
