@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-T2T-Polish v4.0 — runner.py
+T2T-Polish v4.1 — runner.py
 
 Subprocess execution helpers: ``CommandResult``, ``run_command``, and
 the resume-aware ``conditional_run`` wrapper.
@@ -15,9 +15,10 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
-import sys
 import time
 from dataclasses import dataclass, field
+
+from t2t_polish.exceptions import PipelineStepError
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +40,15 @@ def run_command(
     flush: bool = True,
     logfile: str | None = None,
     max_log_lines: int = 100,
+    timeout: int | None = None,
 ) -> CommandResult:
     """Run *cmd* as a subprocess and return a :class:`CommandResult`.
+
+    Parameters
+    ----------
+    timeout:
+        Maximum wall-clock seconds to wait before killing the process.
+        ``None`` (the default) means wait indefinitely.
 
     On non-zero exit the result is still returned (``returncode != 0``) so that
     callers can decide how to proceed.
@@ -68,6 +76,7 @@ def run_command(
             check=True,
             capture_output=True,
             text=True,
+            timeout=timeout,
         )
         elapsed = time.time() - start
 
@@ -87,6 +96,20 @@ def run_command(
                 )
 
         return CommandResult(stdout, stderr, result.returncode, elapsed)
+
+    except subprocess.TimeoutExpired:
+        elapsed = time.time() - start
+        logger.error(
+            "[Timeout] %s exceeded %s s (elapsed: %.2f s)",
+            description if description else cmd,
+            timeout,
+            elapsed,
+        )
+        raise PipelineStepError(
+            step=description or str(cmd),
+            returncode=-9,
+            stderr=f"Process timed out after {timeout} seconds",
+        ) from None
 
     except subprocess.CalledProcessError as e:
         elapsed = time.time() - start
@@ -110,12 +133,21 @@ def conditional_run(
     step_desc: str,
     command: list[str],
     stream: bool = False,
+    timeout: int | None = None,
     **kwargs: object,
 ) -> CommandResult | None:
     """Run *command* only when *outfile* is missing (resume-aware).
 
     If *stream* is ``True`` the command's stdout is piped directly into
     *outfile* via :class:`subprocess.Popen`.
+
+    Parameters
+    ----------
+    timeout:
+        Maximum wall-clock seconds to wait.  Applies to both stream and
+        non-stream modes.
+
+    Raises :class:`PipelineStepError` on non-zero exit or timeout.
     """
     if resume_flag and os.path.exists(outfile):
         logger.info("Resume: skipping %s (exists: %s)", step_desc, outfile)
@@ -130,15 +162,35 @@ def conditional_run(
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
             )
-            _, stderr = proc.communicate()
+            try:
+                _, stderr = proc.communicate(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.communicate()
+                raise PipelineStepError(
+                    step=step_desc,
+                    returncode=-9,
+                    stderr=f"Process timed out after {timeout} seconds",
+                ) from None
             if proc.returncode != 0:
                 logger.error("[STDERR]\n%s", stderr.strip() or "No stderr")
-                sys.exit(proc.returncode)
+                raise PipelineStepError(
+                    step=step_desc,
+                    returncode=proc.returncode,
+                    stderr=stderr.strip() if stderr else "",
+                )
             logger.info("Completed: %s (streamed to %s)", step_desc, outfile)
         return None
 
-    return run_command(command, description=step_desc, **kwargs)
+    result = run_command(command, description=step_desc, timeout=timeout, **kwargs)
+    if result.returncode != 0:
+        raise PipelineStepError(
+            step=step_desc,
+            returncode=result.returncode,
+            stderr=result.stderr,
+        )
+    return result
 
 
-# T2T-Polish v4.0
+# T2T-Polish v4.1
 # Any usage is subject to this software's license.

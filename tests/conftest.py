@@ -71,5 +71,5 @@ def no_tools_on_path():
         yield
 
 
-# T2T-Polish v4.0
+# T2T-Polish v4.1
 # Any usage is subject to this software's license.

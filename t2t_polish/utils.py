@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-T2T-Polish v4.0 — utils.py
+T2T-Polish v4.1 — utils.py
 
 Utility helpers: path building, dependency validation, logging setup,
 tool-version logging, diagnostics, FASTA→FASTQ conversion, and readmers.
@@ -16,24 +16,16 @@ import logging
 import os
 import shutil
 import subprocess
-import sys
 from subprocess import PIPE
 
 from t2t_polish.constants import (
     MERYL,
     TOOL_NAMES,
 )
+from t2t_polish.exceptions import ToolNotFoundError
 from t2t_polish.runner import conditional_run
 
 logger = logging.getLogger(__name__)
-
-
-# ── Path helpers ─────────────────────────────────────────────────────
-
-
-def make_path(base: str, *parts: str, ext: str = "") -> str:
-    """Build an output file path from *base*, dot-joined *parts*, and *ext*."""
-    return f"{base}." + "_".join(parts) + ext
 
 
 # ── Dependency validation ────────────────────────────────────────────
@@ -42,20 +34,18 @@ def make_path(base: str, *parts: str, ext: str = "") -> str:
 def validate_dependencies() -> None:
     """Check that every required external tool is on ``$PATH``.
 
-    Exits with code 1 and a helpful message if any tool is missing.
+    Raises :class:`ToolNotFoundError` if any tool is missing.
     """
     missing: list[str] = []
     for tool in TOOL_NAMES:
         if shutil.which(tool) is None:
             missing.append(tool)
     if missing:
-        logger.error(
-            "Required tool(s) not found in PATH: %s\n"
+        raise ToolNotFoundError(
+            f"Required tool(s) not found in PATH: {', '.join(missing)}\n"
             "  Hint: activate the conda environment (`conda activate t2t_polish`)\n"
-            "  or run inside the Docker / Singularity container.",
-            ", ".join(missing),
+            "  or run inside the Docker / Singularity container."
         )
-        sys.exit(1)
 
 
 def needs_kcov(args: object) -> bool:
@@ -123,7 +113,7 @@ def diagnostic_mode() -> None:
         free / 1e9,
     )
 
-    for pkg in ["pysam", "json", "argparse", "subprocess", "concurrent.futures"]:
+    for pkg in ["pysam", "tqdm"]:
         try:
             __import__(pkg)
             logger.info("[OK] Python package %s is installed", pkg)
@@ -224,5 +214,5 @@ def compute_readmers_db(
     )
 
 
-# T2T-Polish v4.0
+# T2T-Polish v4.1
 # Any usage is subject to this software's license.

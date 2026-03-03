@@ -33,8 +33,7 @@ From: ubuntu:22.04
     # 4. Create and populate the bioinformatics environment
     conda update -n base -c defaults conda -y && \
     conda create -y -n apv4-env -c defaults -c conda-forge -c bioconda \
-        python=3.6 \
-        deepvariant=1.4.0 \
+        python=3.12 \
         meryl \
         winnowmap \
         kmer-jellyfish \
@@ -81,20 +80,26 @@ From: ubuntu:22.04
     rm -rf /var/lib/apt/lists/*
 
 %files
-    APv4.py /usr/local/bin/APv4.py
+    APv4.py /opt/t2t-polish/APv4.py
+    pyproject.toml /opt/t2t-polish/pyproject.toml
+    t2t_polish/ /opt/t2t-polish/t2t_polish/
 
 %post
-    chmod +x /usr/local/bin/APv4.py
-    ln -s /usr/local/bin/APv4.py /usr/local/bin/APv4
+    export CONDA_DIR=/opt/conda
+    # Install the package into the conda env so 't2t-polish' CLI is available
+    $CONDA_DIR/envs/apv4-env/bin/pip install --no-deps /opt/t2t-polish
+    # Keep backward-compat shim
+    ln -sf $CONDA_DIR/envs/apv4-env/bin/t2t-polish /usr/local/bin/APv4
+    chmod +x /usr/local/bin/APv4
 
 %runscript
     # Activate the bioinformatics conda environment
     source "$CONDA_DIR/bin/activate" apv4-env
-    exec APv4 "$@"
+    exec t2t-polish "$@"
 
 %test
-  # Ensure APv4 entrypoint is available
-  which APv4 || (echo "Error: APv4 not found in PATH" >&2; exit 1)
-  # Ensure Merqury is present
+  # Ensure t2t-polish entrypoint is available
+  which t2t-polish || which APv4 || (echo "Error: t2t-polish not found in PATH" >&2; exit 1)
+  # Ensure bioinformatics tools are present
   which merqury.sh || (echo "Error: merqury.sh not found in PATH" >&2; exit 1)
   which merfin || (echo "Error: merfin not found in PATH" >&2; exit 1)

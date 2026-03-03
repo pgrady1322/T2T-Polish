@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-T2T-Polish v4.0 — cli.py
+T2T-Polish v4.1 — cli.py
 
 Command-line interface: argparse setup and ``main()`` entry-point.
 
@@ -19,6 +19,7 @@ import sys
 
 from t2t_polish import __version__
 from t2t_polish.constants import DEFAULT_KMER_SIZE
+from t2t_polish.exceptions import T2TPolishError
 from t2t_polish.kcov import sub_computekcov
 from t2t_polish.polish import sub_polish
 from t2t_polish.utils import (
@@ -88,9 +89,9 @@ def _build_parser() -> ShowHelpOnErrorArgumentParser:
         ),
     )
     # Required
-    parser_pol.add_argument("-d", "--draft", help="Draft assembly FASTA")
+    parser_pol.add_argument("-d", "--draft", required=True, help="Draft assembly FASTA")
     parser_pol.add_argument(
-        "-r", "--reads",
+        "-r", "--reads", required=True,
         help="Reads in FASTQ or FASTA format, GZIP is currently not accepted",
     )
     parser_pol.add_argument(
@@ -210,8 +211,6 @@ def _build_parser() -> ShowHelpOnErrorArgumentParser:
 
 def main() -> None:
     """Entry-point for the T2T-Polish CLI."""
-    validate_dependencies()
-
     parser = _build_parser()
     args = parser.parse_args()
 
@@ -236,6 +235,15 @@ def main() -> None:
     if not args.subcommand:
         parser.print_help()
         sys.exit(1)
+
+    # Validate external tool dependencies only for pipeline subcommands
+    # (not for diagnostics, which checks tools itself, or --help/--version)
+    if args.subcommand in ("polish", "computekcov"):
+        try:
+            validate_dependencies()
+        except T2TPolishError as e:
+            logger.error("%s", e)
+            sys.exit(1)
 
     # Log run parameters
     prefix = getattr(args, "prefix", None)
@@ -266,6 +274,9 @@ def main() -> None:
     # Dispatch
     try:
         args.func(args)
+    except T2TPolishError as e:
+        logger.error("%s", e)
+        sys.exit(1)
     except Exception:
         logger.exception("Pipeline failed with unhandled exception")
         sys.exit(1)
@@ -274,5 +285,5 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 
-# T2T-Polish v4.0
+# T2T-Polish v4.1
 # Any usage is subject to this software's license.

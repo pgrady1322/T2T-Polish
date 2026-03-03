@@ -1,4 +1,4 @@
-.PHONY: help install dev lint format typecheck test test-cov docker clean
+.PHONY: help install dev lint format typecheck test test-cov ci docker clean
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -30,7 +30,12 @@ test:  ## Run tests
 	pytest tests/ -v --tb=short
 
 test-cov:  ## Run tests with coverage
-	pytest tests/ -v --tb=short --cov=t2t_polish --cov-report=term-missing
+	pytest tests/ -v --tb=short --cov=t2t_polish --cov-report=term-missing --cov-fail-under=70
+
+# ── CI ───────────────────────────────────────────────────────────────
+
+ci: lint typecheck test-cov  ## Run lint + typecheck + tests (mirrors CI pipeline)
+	@ruff format --check t2t_polish/ tests/
 
 # ── Docker ───────────────────────────────────────────────────────────
 

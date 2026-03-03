@@ -1,6 +1,7 @@
 # T2T-Automated-Polishing
 
-[![Python](https://img.shields.io/badge/python-3.x-blue.svg)](https://www.python.org/downloads/)
+[![CI](https://github.com/arangrhie/T2T-Polish/actions/workflows/ci.yml/badge.svg)](https://github.com/arangrhie/T2T-Polish/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Singularity](https://img.shields.io/badge/singularity-container-blue.svg)](APv4_Singularity.def)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](Dockerfile)
 [![License: Public Domain](https://img.shields.io/badge/license-Public%20Domain-lightgrey.svg)](LICENSE)
@@ -19,11 +20,13 @@ This repository includes everything needed to run the APv4 polishing pipeline:
 
 | File | Description |
 |------|-------------|
-| `APv4.py` | Main Python pipeline script |
+| `t2t_polish/` | Modular Python package (CLI, constants, runner, polishing, evaluation, k-cov) |
+| `APv4.py` | Backward-compatible shim that delegates to `t2t_polish.cli:main()` |
 | `APv4.yml` | Conda environment specification with all dependencies |
 | `Dockerfile` | Docker container definition for portable deployment |
 | `APv4_Singularity.def` | Singularity container definition for HPC environments |
 | `APv4_SLURM.sh` | Example SLURM submission script for cluster computing |
+| `tests/` | pytest test suite |
 | `legacy/` | Previous versions (v2, v3) for reference |
 
 ## What's New in Version 4
@@ -53,7 +56,7 @@ Genome assembly accuracy is automatically assessed at each iteration using both 
 
 ```bash
 # Run diagnostics to check dependencies
-python APv4.py --diagnostics
+python APv4.py diagnostics
 
 # Compute optimal k-mer coverage (recommended first step)
 python APv4.py computekcov \
@@ -162,7 +165,7 @@ python APv4.py polish -d draft.fasta -r reads.fq \
 * [Merqury](https://github.com/marbl/merqury) - K-mer based assembly evaluation (merqury.sh must be on PATH)
 
 ### Python Dependencies
-* Python 3.7+
+* Python 3.10+
 * pysam
 * tqdm (for progress bars)
 * Standard library: argparse, subprocess, concurrent.futures, logging, pathlib
@@ -296,10 +299,10 @@ This will check for all required tools and display their versions.
 
 ### Configuration
 
-The pipeline automatically detects tools on PATH. If tools are installed in non-standard locations, you can modify the tool paths in the `APv4.py` script:
+The pipeline automatically detects tools on PATH. If tools are installed in non-standard locations, you can modify the tool names in `t2t_polish/constants.py`:
 
 ```python
-# Tool paths (modify if needed)
+# Tool names (modify if needed)
 WINNOWMAP = "winnowmap"
 FALCONC = "falconc"
 MERYL = "meryl"
@@ -442,7 +445,7 @@ If jobs fail due to memory:
 
 Run diagnostics to check dependencies:
 ```bash
-python APv4.py --diagnostics
+python APv4.py diagnostics
 ```
 
 For missing tools:
@@ -557,7 +560,6 @@ The bash-based version 3 is still available in the `legacy/` directory for users
 ## Future Roadmap
 
 - Multi-GPU support for DeepVariant
-- Docker/Podman container support (in addition to Singularity)
 - Integration with cloud computing platforms
 - Advanced QV visualization and reporting
 - Support for additional variant callers

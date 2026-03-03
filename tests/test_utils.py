@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-T2T-Polish v4.0 — tests/test_utils.py
+T2T-Polish v4.1 — tests/test_utils.py
 
-Unit tests for t2t_polish.utils (path helpers, dependency checks, logging,
+Unit tests for t2t_polish.utils (dependency checks, logging,
 FASTA→FASTQ, readmers).
 """
 
@@ -13,26 +13,13 @@ from unittest.mock import patch
 
 import pytest
 
+from t2t_polish.exceptions import ToolNotFoundError
 from t2t_polish.utils import (
     fasta_to_fastq,
-    make_path,
     needs_kcov,
     setup_logging,
     validate_dependencies,
 )
-
-# ── make_path ────────────────────────────────────────────────────────
-
-
-class TestMakePath:
-    def test_basic(self):
-        assert make_path("out", "a", "b", ext=".txt") == "out.a_b.txt"
-
-    def test_single_part(self):
-        assert make_path("prefix", "step") == "prefix.step"
-
-    def test_no_ext(self):
-        assert make_path("prefix", "x", "y") == "prefix.x_y"
 
 
 # ── validate_dependencies ────────────────────────────────────────────
@@ -40,21 +27,21 @@ class TestMakePath:
 
 class TestValidateDependencies:
     def test_all_found(self, all_tools_on_path):
-        # Should not raise / sys.exit
+        # Should not raise
         validate_dependencies()
 
-    def test_missing_tool_exits(self, no_tools_on_path):
-        with pytest.raises(SystemExit):
+    def test_missing_tool_raises(self, no_tools_on_path):
+        with pytest.raises(ToolNotFoundError, match="not found in PATH"):
             validate_dependencies()
 
-    def test_partial_missing_exits(self):
+    def test_partial_missing_raises(self):
         def _fake_which(name):
             if name == "merfin":
                 return None
             return "/usr/bin/" + name
 
         with patch("t2t_polish.utils.shutil.which", side_effect=_fake_which):
-            with pytest.raises(SystemExit):
+            with pytest.raises(ToolNotFoundError, match="merfin"):
                 validate_dependencies()
 
 
@@ -164,5 +151,5 @@ class TestFastaToFastq:
         assert "@empty_seq" not in content
 
 
-# T2T-Polish v4.0
+# T2T-Polish v4.1
 # Any usage is subject to this software's license.

@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
 
       - name: Install dependencies
         run: |
@@ -28,12 +29,19 @@ jobs:
       - name: Lint (ruff)
         run: ruff check t2t_polish/ tests/
 
+      - name: Format check (ruff)
+        run: ruff format --check t2t_polish/ tests/
+
       - name: Type check (mypy)
         run: mypy t2t_polish/ --ignore-missing-imports
-        continue-on-error: true
 
-      - name: Test (pytest)
-        run: pytest tests/ -v --tb=short --junitxml=test-results.xml
+      - name: Test with coverage (pytest)
+        run: |
+          pytest tests/ -v --tb=short \
+            --junitxml=test-results.xml \
+            --cov=t2t_polish \
+            --cov-report=xml:coverage.xml \
+            --cov-fail-under=70
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -41,6 +49,13 @@ jobs:
         with:
           name: test-results-${{ matrix.python-version }}
           path: test-results.xml
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml
 
   docker:
     runs-on: ubuntu-latest

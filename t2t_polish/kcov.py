@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-T2T-Polish v4.0 — kcov.py
+T2T-Polish v4.1 — kcov.py
 
 ``computekcov`` subcommand: Jellyfish count / histo → GenomeScope2 → kcov.
 
@@ -15,9 +15,9 @@ import json
 import logging
 import os
 import re
-import sys
 
 from t2t_polish.constants import GENOMESCOPE, JELLYFISH
+from t2t_polish.exceptions import InputValidationError
 from t2t_polish.runner import conditional_run
 
 logger = logging.getLogger(__name__)
@@ -30,8 +30,7 @@ def sub_computekcov(args: object) -> tuple[str | None, str]:
     """
     reads: str = getattr(args, "reads", "")
     if not os.path.exists(reads):
-        logger.error("Reads file not found: %s", reads)
-        sys.exit(1)
+        raise InputValidationError(f"Reads file not found: {reads}")
 
     prefix: str = getattr(args, "prefix", "KCoverage")
     resume: bool = getattr(args, "resume", False)
@@ -119,7 +118,7 @@ def sub_computekcov(args: object) -> tuple[str | None, str]:
         outfile=os.path.join(gs_outdir, "lookup_table.txt"),
         resume_flag=resume,
         step_desc=(
-            "[computekcov step 4] GenomeScope2 fitted histogram file creation "
+            "[computekcov step 3] GenomeScope2 fitted histogram file creation "
             "and coverage calculation for pipeline"
         ),
         command=gs_cmd,
@@ -175,5 +174,5 @@ def _parse_kcov_from_params(params_txt: str) -> str | None:
     return None
 
 
-# T2T-Polish v4.0
+# T2T-Polish v4.1
 # Any usage is subject to this software's license.

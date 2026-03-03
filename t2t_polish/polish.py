@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-T2T-Polish v4.0 — polish.py
+T2T-Polish v4.1 — polish.py
 
 Core polishing iteration and the ``sub_polish`` orchestrator.
 
@@ -16,9 +16,8 @@ import json
 import logging
 import os
 import shutil
-import sys
 import time
-from contextlib import redirect_stderr, redirect_stdout
+from dataclasses import dataclass
 
 import pysam  # type: ignore
 
@@ -33,6 +32,7 @@ from t2t_polish.constants import (
     WINNOWMAP,
 )
 from t2t_polish.evaluation import run_merfin_eval, run_merqury_eval
+from t2t_polish.exceptions import InputValidationError, PipelineStepError
 from t2t_polish.kcov import sub_computekcov
 from t2t_polish.runner import conditional_run
 from t2t_polish.utils import compute_readmers_db, fasta_to_fastq, needs_kcov
@@ -69,6 +69,75 @@ class PolishIteration:
 
 
 # ── Single polishing iteration ───────────────────────────────────────
+
+
+@dataclass
+class PolishConfig:
+    """Typed configuration extracted from the CLI ``args`` namespace.
+
+    Replaces the old pattern of mutating an argparse namespace with
+    ``# type: ignore[attr-defined]`` annotations.  Built once at the
+    top of :func:`sub_polish` and threaded through to helpers.
+    """
+
+    draft: str
+    reads: str
+    prefix: str = "AutoPolisher"
+    threads: int = 32
+    iterations: int = 3
+    kmer_size: int = DEFAULT_KMER_SIZE
+    meryl_memory: int = 50
+    singularity_sif: str = ""
+    deepseq_type: str = "PACBIO"
+    seq_type: str = ""
+    ploidy: str = "haploid"
+    optimized: bool = False
+    resume: bool = False
+    resume_from: int = 0
+    cleanup: bool = False
+    dv_tmp_dir: str | None = None
+    read_corrector: str | None = None
+    readmers: str = ""
+    ideal_dpeak: float | None = None
+    ideal_hpeak: float | None = None
+    fitted_hist: str | None = None
+    config_file: str | None = None
+    jellyfish_hash_size: int = 1_000_000_000
+    json_summary: bool = False
+    log_file: str | None = None
+    quiet: bool = False
+
+    @classmethod
+    def from_args(cls, args: object) -> PolishConfig:
+        """Build a :class:`PolishConfig` from an argparse-like namespace."""
+        return cls(
+            draft=getattr(args, "draft", "") or "",
+            reads=getattr(args, "reads", "") or "",
+            prefix=getattr(args, "prefix", "AutoPolisher"),
+            threads=getattr(args, "threads", 32),
+            iterations=getattr(args, "iterations", 3),
+            kmer_size=getattr(args, "kmer_size", DEFAULT_KMER_SIZE),
+            meryl_memory=getattr(args, "meryl_memory", 50),
+            singularity_sif=getattr(args, "singularity_sif", ""),
+            deepseq_type=getattr(args, "deepseq_type", "PACBIO"),
+            seq_type=getattr(args, "seq_type", "") or "",
+            ploidy=getattr(args, "ploidy", "haploid"),
+            optimized=getattr(args, "optimized", False),
+            resume=getattr(args, "resume", False),
+            resume_from=getattr(args, "resume_from", 0),
+            cleanup=getattr(args, "cleanup", False),
+            dv_tmp_dir=getattr(args, "dv_tmp_dir", None),
+            read_corrector=getattr(args, "read_corrector", None),
+            readmers=getattr(args, "readmers", "") or "",
+            ideal_dpeak=getattr(args, "ideal_dpeak", None),
+            ideal_hpeak=getattr(args, "ideal_hpeak", None),
+            fitted_hist=getattr(args, "fitted_hist", None),
+            config_file=getattr(args, "config_file", None),
+            jellyfish_hash_size=getattr(args, "jellyfish_hash_size", 1_000_000_000),
+            json_summary=getattr(args, "json_summary", False),
+            log_file=getattr(args, "log_file", None),
+            quiet=getattr(args, "quiet", False),
+        )
 
 
 def run_polish_iteration(
@@ -114,33 +183,30 @@ def run_polish_iteration(
         )
         os.remove(paths.repet_db)
 
-    with open(os.devnull, "w") as devnull, redirect_stdout(devnull), redirect_stderr(devnull):
-        conditional_run(
-            outfile=paths.repet_db,
+    conditional_run(
+        outfile=paths.repet_db,
+        resume_flag=(resume and resume_from <= 1),
+        step_desc=f"[Iter {iteration_id} Step 1] Generation of Repetitive 15-mers from Genome",
+        command=[
+            MERYL, "k=15", "count", f"threads={num_threads}",
+            f"memory={meryl_memory}", "output", paths.repet_db, draft_fasta,
+        ],
+        max_log_lines=0,
+    )
+
+    if not (resume and os.path.exists(paths.repet_k15_txt)):
+        result = conditional_run(
+            outfile=paths.repet_k15_txt,
             resume_flag=(resume and resume_from <= 1),
-            step_desc=f"[Iter {iteration_id} Step 1] Generation of Repetitive 15-mers from Genome",
+            step_desc=f"[Iter {iteration_id} Step 1B] Filter Repetitive 15-mers",
             command=[
-                MERYL, "k=15", "count", f"threads={num_threads}",
-                f"memory={meryl_memory}", "output", paths.repet_db, draft_fasta,
+                MERYL, "print", "greater-than", "distinct=0.9998", paths.repet_db,
             ],
             max_log_lines=0,
         )
-
-    if not (resume and os.path.exists(paths.repet_k15_txt)):
-        with open(os.devnull, "w") as devnull:
-            with redirect_stdout(devnull), redirect_stderr(devnull):
-                result = conditional_run(
-                    outfile=paths.repet_k15_txt,
-                    resume_flag=(resume and resume_from <= 1),
-                    step_desc=f"[Iter {iteration_id} Step 1B] Filter Repetitive 15-mers",
-                    command=[
-                        MERYL, "print", "greater-than", "distinct=0.9998", paths.repet_db,
-                    ],
-                    max_log_lines=0,
-                )
-                if result:
-                    with open(paths.repet_k15_txt, "w") as fh:
-                        fh.write(result.stdout)
+        if result:
+            with open(paths.repet_k15_txt, "w") as fh:
+                fh.write(result.stdout)
 
     # ── Step 2 — Winnowmap → SAM → BAM ──────────────────────────────
     winnowmap_sorted_bam = os.path.join(iter_folder, f"{prefix}.winnowmap.sorted.bam")
@@ -233,20 +299,18 @@ def run_polish_iteration(
             with pysam.AlignmentFile(paths.bam, "rb") as bamfile:
                 bamfile.check_index()
         except Exception as e:
-            logger.error(
-                "BAM file %s appears to be corrupted or unindexed: %s", paths.bam, e
-            )
-            sys.exit(1)
+            raise InputValidationError(
+                f"BAM file {paths.bam} appears to be corrupted or unindexed: {e}"
+            ) from e
 
     if resume and resume_from <= 4 and os.path.exists(paths.dv_vcf):
         try:
             with pysam.VariantFile(paths.dv_vcf, "r"):
                 pass
         except Exception as e:
-            logger.error(
-                "VCF file %s is invalid or unreadable: %s", paths.dv_vcf, e
-            )
-            sys.exit(1)
+            raise InputValidationError(
+                f"VCF file {paths.dv_vcf} is invalid or unreadable: {e}"
+            ) from e
 
     dv_tmp = dv_tmp_dir or os.path.join(iter_folder, "dv_tmp")
     dv_tmp = os.path.abspath(dv_tmp)
@@ -278,10 +342,11 @@ def run_polish_iteration(
     )
 
     if not os.path.exists(paths.dv_vcf):
-        logger.error(
-            "DeepVariant did not produce the expected output VCF. Check logs and command."
+        raise PipelineStepError(
+            step=f"[Iter {iteration_id}] DeepVariant",
+            returncode=1,
+            stderr="DeepVariant did not produce the expected output VCF. Check logs and command.",
         )
-        sys.exit(1)
 
     # ── Step 5 — Meryl DB + Merfin polish VCF ───────────────────────
     if os.path.exists(paths.meryl_db) and not os.path.isdir(paths.meryl_db):
@@ -381,244 +446,257 @@ def run_polish_iteration(
 # ── sub_polish orchestrator ──────────────────────────────────────────
 
 
-def sub_polish(args: object) -> None:  # noqa: C901
+def sub_polish(args: object) -> None:
     """Entry-point for the ``polish`` subcommand — iterates through polishing rounds."""
-    # Auto-reload kcov from JSON on resume
-    prefix: str = getattr(args, "prefix", "AutoPolisher")
-    kcov_meta = f"{prefix}.kcov.json"
-    if getattr(args, "resume", False) and os.path.exists(kcov_meta):
-        with open(kcov_meta) as mf:
-            meta = json.load(mf)
-        args.fitted_hist = meta.get("fitted_hist")  # type: ignore[attr-defined]
-        if getattr(args, "ploidy", "haploid") == "haploid":
-            args.ideal_dpeak = meta.get("kcov")  # type: ignore[attr-defined]
-        else:
-            args.ideal_hpeak = meta.get("kcov")  # type: ignore[attr-defined]
-        logger.info(
-            "Resume: reloaded kcov=%s, fitted_hist=%s from %s",
-            meta.get("kcov"), getattr(args, "fitted_hist", None), kcov_meta,
-        )
+    cfg = PolishConfig.from_args(args)
+    cfg = _apply_resume_kcov(cfg)
+    cfg = _apply_config_file(cfg)
 
-    resume = getattr(args, "resume", False)
-    resume_from = getattr(args, "resume_from", 0)
-    if resume and resume_from > 0:
-        logger.warning(
-            "Both --resume and --resume-from set. Using --resume-from as priority."
-        )
-
-    # Config file overrides
-    config_file = getattr(args, "config_file", None)
-    if config_file:
-        with open(config_file) as cf:
-            config_data = json.load(cf)
-        if not getattr(args, "reads", None) and "reads" in config_data:
-            args.reads = config_data["reads"]  # type: ignore[attr-defined]
-        if not getattr(args, "readmers", None) and "readmers" in config_data:
-            args.readmers = config_data["readmers"]  # type: ignore[attr-defined]
-        if getattr(args, "optimized", False):
-            if not getattr(args, "ideal_dpeak", None) and "peak_haploid" in config_data:
-                args.ideal_dpeak = config_data["peak_haploid"]  # type: ignore[attr-defined]
-            if not getattr(args, "ideal_hpeak", None) and "peak_diploid" in config_data:
-                args.ideal_hpeak = config_data["peak_diploid"]  # type: ignore[attr-defined]
-        if not getattr(args, "fitted_hist", None) and "fitted_hist_location" in config_data:
-            args.fitted_hist = config_data["fitted_hist_location"]  # type: ignore[attr-defined]
-
-    chosen_peak: float | str | None = None
-
-    if (
-        resume
-        and getattr(args, "fitted_hist", None)
-        and (
-            (getattr(args, "ploidy", "") == "haploid" and getattr(args, "ideal_dpeak", None))
-            or (getattr(args, "ploidy", "") == "diploid" and getattr(args, "ideal_hpeak", None))
-        )
-    ):
-        chosen_peak = (
-            args.ideal_dpeak
-            if getattr(args, "ploidy", "") == "haploid"
-            else args.ideal_hpeak
-        )
-        logger.info(
-            "Resume: using existing coverage parameters with --ideal_peak=%s and --fitted_hist=%s",
-            chosen_peak,
-            getattr(args, "fitted_hist", None),
-        )
-
-    # FASTA → FASTQ conversion
-    reads: str = getattr(args, "reads", "")
-    if reads.lower().endswith((".fasta", ".fa")):
-        corrector = getattr(args, "read_corrector", None)
-        if not corrector:
-            logger.warning(
-                "FASTA reads detected, but no corrector specified. "
-                "Defaulting to 'unknown'. DO NOT use uncorrected FASTA reads!"
-            )
-            corrector = "unknown"
-            args.read_corrector = corrector  # type: ignore[attr-defined]
-        quality_score = DEFAULT_CORRECTOR_Q.get(corrector, 30)
-        converted_fastq = prefix + ".converted_reads.fastq"
-        logger.info(
-            "Corrected Reads Detected: converting FASTA to FASTQ with quality Q=%d for corrector: %s",
-            quality_score,
-            corrector,
-        )
-        fasta_to_fastq(reads, converted_fastq, quality_score=quality_score)
-        args.reads = converted_fastq  # type: ignore[attr-defined]
-        reads = converted_fastq
-
-    # Validate inputs
-    draft: str = getattr(args, "draft", "")
-    if not draft or not os.path.exists(draft):
-        logger.error("Missing or invalid --draft")
-        sys.exit(1)
-    if not reads or not os.path.exists(reads):
-        logger.error("Missing or invalid --reads")
-        sys.exit(1)
-
-    readmers_path: str = getattr(args, "readmers", "") or ""
-    if not readmers_path or not os.path.exists(readmers_path):
-        computed_readmers = prefix + ".readmers.meryl"
-        logger.info("Running Module: Meryl Started: Readmers not provided")
-        with open(os.devnull, "w") as devnull:
-            with redirect_stdout(devnull), redirect_stderr(devnull):
-                compute_readmers_db(
-                    reads, computed_readmers,
-                    k=31, threads=getattr(args, "threads", 8),
-                )
-        args.readmers = computed_readmers  # type: ignore[attr-defined]
-        readmers_path = computed_readmers
-
-    # Auto-detect winnowmap seq type
-    seq_type: str = getattr(args, "seq_type", "") or ""
-    deepseq_type: str = getattr(args, "deepseq_type", "PACBIO")
-    if not seq_type:
-        if deepseq_type == "PACBIO":
-            seq_type = "pb"
-            logger.info(
-                "Auto-Setting: setting winnowmap seq_type to 'pb' because deepseq_type = 'PACBIO'"
-            )
-        elif deepseq_type == "ONT_R104":
-            seq_type = "ont"
-            logger.info(
-                "Auto-Setting: setting winnowmap seq_type to 'ont' because deepseq_type = 'ONT_R104'"
-            )
-        else:
-            logger.error(
-                "deepseq_type=%s isn't automatically mapped. "
-                "Please specify --seq_type for winnowmap (e.g. pb or ont).",
-                deepseq_type,
-            )
-            sys.exit(1)
-        args.seq_type = seq_type  # type: ignore[attr-defined]
-
-    # K-mer coverage computation
-    optimized: bool = getattr(args, "optimized", False)
-    ploidy: str = getattr(args, "ploidy", "haploid")
-    kmer_size: int = getattr(args, "kmer_size", DEFAULT_KMER_SIZE)
-    threads: int = getattr(args, "threads", 8)
-
-    if needs_kcov(args):
-        logger.info(
-            "Optimized Run: running internal compute-kcov step to determine coverage parameters"
-        )
-        cov_prefix = prefix + ".kcov"
-
-        class CKArgs:
-            pass
-
-        ckargs = CKArgs()
-        ckargs.resume = resume  # type: ignore[attr-defined]
-        ckargs.jellyfish_hash_size = getattr(args, "jellyfish_hash_size", 1_000_000_000)  # type: ignore[attr-defined]
-        ckargs.reads = reads  # type: ignore[attr-defined]
-        ckargs.prefix = cov_prefix  # type: ignore[attr-defined]
-        ckargs.kmer_size = kmer_size  # type: ignore[attr-defined]
-        ckargs.threads = threads  # type: ignore[attr-defined]
-        ckargs.ploidy = ploidy  # type: ignore[attr-defined]
-        discovered_kcov, fitted_hist_location = sub_computekcov(ckargs)
-        args.fitted_hist = fitted_hist_location  # type: ignore[attr-defined]
-        if ploidy == "haploid":
-            args.ideal_dpeak = discovered_kcov  # type: ignore[attr-defined]
-        else:
-            args.ideal_hpeak = discovered_kcov  # type: ignore[attr-defined]
-        chosen_peak = discovered_kcov
-    elif optimized:
-        if ploidy == "haploid":
-            chosen_peak = getattr(args, "ideal_dpeak", None)
-            if chosen_peak is None:
-                logger.error("ploidy=haploid but no --ideal_dpeak set.")
-                sys.exit(1)
-        else:
-            chosen_peak = getattr(args, "ideal_hpeak", None)
-            if chosen_peak is None:
-                logger.error("ploidy=diploid but no --ideal_hpeak set.")
-                sys.exit(1)
-
-    # Warn on optimized + resume without metadata
-    if optimized and resume:
-        if os.path.exists(kcov_meta):
-            logger.warning(
-                "Running with --optimized and --resume: loading kcov parameters from %s",
-                kcov_meta,
-            )
-        else:
-            logger.error(
-                "Missing kcov metadata file %s required for --optimized --resume",
-                kcov_meta,
-            )
-            sys.exit(1)
+    chosen_peak = _resolve_chosen_peak(cfg)
+    cfg = _convert_fasta_reads(cfg)
+    _validate_inputs(cfg)
+    cfg = _ensure_readmers(cfg)
+    cfg = _resolve_seq_type(cfg)
+    chosen_peak, cfg = _compute_kcov_if_needed(cfg, chosen_peak)
+    _check_optimized_resume(cfg)
 
     logger.info(
         "Launching polishing with ideal_kcov=%s, fitted_hist=%s",
-        getattr(args, "ideal_dpeak" if ploidy == "haploid" else "ideal_hpeak", None),
-        getattr(args, "fitted_hist", None),
+        cfg.ideal_dpeak if cfg.ploidy == "haploid" else cfg.ideal_hpeak,
+        cfg.fitted_hist,
     )
 
-    os.makedirs(os.path.dirname(prefix) or ".", exist_ok=True)
+    _run_iterations(cfg, chosen_peak)
+
+
+# ── sub_polish helpers ───────────────────────────────────────────────
+
+
+def _apply_resume_kcov(cfg: PolishConfig) -> PolishConfig:
+    """Reload kcov metadata from a previous run when resuming."""
+    kcov_meta = f"{cfg.prefix}.kcov.json"
+    if cfg.resume and os.path.exists(kcov_meta):
+        with open(kcov_meta) as mf:
+            meta = json.load(mf)
+        cfg.fitted_hist = meta.get("fitted_hist")
+        if cfg.ploidy == "haploid":
+            cfg.ideal_dpeak = meta.get("kcov")
+        else:
+            cfg.ideal_hpeak = meta.get("kcov")
+        logger.info(
+            "Resume: reloaded kcov=%s, fitted_hist=%s from %s",
+            meta.get("kcov"), cfg.fitted_hist, kcov_meta,
+        )
+    if cfg.resume and cfg.resume_from > 0:
+        logger.warning(
+            "Both --resume and --resume-from set. Using --resume-from as priority."
+        )
+    return cfg
+
+
+def _apply_config_file(cfg: PolishConfig) -> PolishConfig:
+    """Merge overrides from an optional JSON config file."""
+    if not cfg.config_file:
+        return cfg
+    with open(cfg.config_file) as cf:
+        data = json.load(cf)
+    if not cfg.reads and "reads" in data:
+        cfg.reads = data["reads"]
+    if not cfg.readmers and "readmers" in data:
+        cfg.readmers = data["readmers"]
+    if cfg.optimized:
+        if not cfg.ideal_dpeak and "peak_haploid" in data:
+            cfg.ideal_dpeak = data["peak_haploid"]
+        if not cfg.ideal_hpeak and "peak_diploid" in data:
+            cfg.ideal_hpeak = data["peak_diploid"]
+    if not cfg.fitted_hist and "fitted_hist_location" in data:
+        cfg.fitted_hist = data["fitted_hist_location"]
+    return cfg
+
+
+def _resolve_chosen_peak(cfg: PolishConfig) -> float | str | None:
+    """Determine the chosen coverage peak from existing config."""
+    if (
+        cfg.resume
+        and cfg.fitted_hist
+        and (
+            (cfg.ploidy == "haploid" and cfg.ideal_dpeak)
+            or (cfg.ploidy == "diploid" and cfg.ideal_hpeak)
+        )
+    ):
+        peak = cfg.ideal_dpeak if cfg.ploidy == "haploid" else cfg.ideal_hpeak
+        logger.info(
+            "Resume: using existing coverage parameters with --ideal_peak=%s and --fitted_hist=%s",
+            peak, cfg.fitted_hist,
+        )
+        return peak
+    return None
+
+
+def _convert_fasta_reads(cfg: PolishConfig) -> PolishConfig:
+    """Convert FASTA reads to FASTQ with an appropriate quality score."""
+    if not cfg.reads.lower().endswith((".fasta", ".fa")):
+        return cfg
+    corrector = cfg.read_corrector
+    if not corrector:
+        logger.warning(
+            "FASTA reads detected, but no corrector specified. "
+            "Defaulting to 'unknown'. DO NOT use uncorrected FASTA reads!"
+        )
+        corrector = "unknown"
+        cfg.read_corrector = corrector
+    quality_score = DEFAULT_CORRECTOR_Q.get(corrector, 30)
+    converted_fastq = cfg.prefix + ".converted_reads.fastq"
+    logger.info(
+        "Corrected Reads Detected: converting FASTA to FASTQ with quality Q=%d for corrector: %s",
+        quality_score, corrector,
+    )
+    fasta_to_fastq(cfg.reads, converted_fastq, quality_score=quality_score)
+    cfg.reads = converted_fastq
+    return cfg
+
+
+def _validate_inputs(cfg: PolishConfig) -> None:
+    """Check that draft and reads paths are valid."""
+    if not cfg.draft or not os.path.exists(cfg.draft):
+        raise InputValidationError("Missing or invalid --draft")
+    if not cfg.reads or not os.path.exists(cfg.reads):
+        raise InputValidationError("Missing or invalid --reads")
+
+
+def _ensure_readmers(cfg: PolishConfig) -> PolishConfig:
+    """Compute readmers database if not provided."""
+    if cfg.readmers and os.path.exists(cfg.readmers):
+        return cfg
+    computed_readmers = cfg.prefix + ".readmers.meryl"
+    logger.info("Running Module: Meryl Started: Readmers not provided")
+    compute_readmers_db(
+        cfg.reads, computed_readmers,
+        k=31, threads=cfg.threads,
+    )
+    cfg.readmers = computed_readmers
+    return cfg
+
+
+def _resolve_seq_type(cfg: PolishConfig) -> PolishConfig:
+    """Auto-detect winnowmap seq type from deepseq_type if not set."""
+    if cfg.seq_type:
+        return cfg
+    if cfg.deepseq_type == "PACBIO":
+        cfg.seq_type = "pb"
+        logger.info(
+            "Auto-Setting: setting winnowmap seq_type to 'pb' because deepseq_type = 'PACBIO'"
+        )
+    elif cfg.deepseq_type == "ONT_R104":
+        cfg.seq_type = "ont"
+        logger.info(
+            "Auto-Setting: setting winnowmap seq_type to 'ont' because deepseq_type = 'ONT_R104'"
+        )
+    else:
+        raise InputValidationError(
+            f"deepseq_type={cfg.deepseq_type} isn't automatically mapped. "
+            "Please specify --seq_type for winnowmap (e.g. pb or ont)."
+        )
+    return cfg
+
+
+def _compute_kcov_if_needed(
+    cfg: PolishConfig, chosen_peak: float | str | None
+) -> tuple[float | str | None, PolishConfig]:
+    """Run the compute-kcov sub-pipeline when --optimized requires it."""
+    if needs_kcov(cfg):
+        logger.info(
+            "Optimized Run: running internal compute-kcov step to determine coverage parameters"
+        )
+        cov_prefix = cfg.prefix + ".kcov"
+        ckargs = PolishConfig(
+            draft=cfg.draft,
+            reads=cfg.reads,
+            prefix=cov_prefix,
+            kmer_size=cfg.kmer_size,
+            threads=cfg.threads,
+            ploidy=cfg.ploidy,
+            resume=cfg.resume,
+            jellyfish_hash_size=cfg.jellyfish_hash_size,
+        )
+        discovered_kcov, fitted_hist_location = sub_computekcov(ckargs)
+        cfg.fitted_hist = fitted_hist_location
+        if cfg.ploidy == "haploid":
+            cfg.ideal_dpeak = discovered_kcov
+        else:
+            cfg.ideal_hpeak = discovered_kcov
+        chosen_peak = discovered_kcov
+    elif cfg.optimized:
+        if cfg.ploidy == "haploid":
+            chosen_peak = cfg.ideal_dpeak
+            if chosen_peak is None:
+                raise InputValidationError("ploidy=haploid but no --ideal_dpeak set.")
+        else:
+            chosen_peak = cfg.ideal_hpeak
+            if chosen_peak is None:
+                raise InputValidationError("ploidy=diploid but no --ideal_hpeak set.")
+    return chosen_peak, cfg
+
+
+def _check_optimized_resume(cfg: PolishConfig) -> None:
+    """Validate kcov metadata when running --optimized --resume."""
+    if not (cfg.optimized and cfg.resume):
+        return
+    kcov_meta = f"{cfg.prefix}.kcov.json"
+    if os.path.exists(kcov_meta):
+        logger.warning(
+            "Running with --optimized and --resume: loading kcov parameters from %s",
+            kcov_meta,
+        )
+    else:
+        raise InputValidationError(
+            f"Missing kcov metadata file {kcov_meta} required for --optimized --resume"
+        )
+
+
+def _run_iterations(cfg: PolishConfig, chosen_peak: float | str | None) -> None:
+    """Execute the polishing iteration loop and write summaries."""
+    os.makedirs(os.path.dirname(cfg.prefix) or ".", exist_ok=True)
 
     # Iteration 0 — copy user draft
-    iteration0 = f"{prefix}.iter_0.consensus.fasta"
+    iteration0 = f"{cfg.prefix}.iter_0.consensus.fasta"
     conditional_run(
         outfile=iteration0,
-        resume_flag=(resume and resume_from <= 0),
+        resume_flag=(cfg.resume and cfg.resume_from <= 0),
         step_desc="[Iteration 0] Copy initial draft",
-        command=["cp", draft, iteration0],
+        command=["cp", cfg.draft, iteration0],
     )
 
     all_qv_records: list[tuple[int, str, str]] = []
     old_consensus = os.path.abspath(iteration0)
-    iterations: int = getattr(args, "iterations", 3)
-    singularity_sif: str = getattr(args, "singularity_sif", "")
-    meryl_memory: int = getattr(args, "meryl_memory", 50)
-    dv_tmp_dir: str | None = getattr(args, "dv_tmp_dir", None)
-    cleanup: bool = getattr(args, "cleanup", False)
 
-    for i in range(iterations):
+    for i in range(cfg.iterations):
         iter_num = i + 1
-        iter_folder = f"{prefix}_iteration_{iter_num}"
+        iter_folder = f"{cfg.prefix}_iteration_{iter_num}"
         os.makedirs(iter_folder, exist_ok=True)
 
         new_consensus, merfin_out, merqury_out = run_polish_iteration(
             iter_folder=iter_folder,
             iteration_id=iter_num,
             draft_fasta=old_consensus,
-            reads=os.path.abspath(reads),
-            readmers=os.path.abspath(readmers_path),
-            k_mer_size=kmer_size,
-            num_threads=threads,
-            winnowmap_seq_type=seq_type,
-            deepseq_type=deepseq_type,
-            singularity_sif=singularity_sif,
-            cleanup=cleanup,
-            optimized=optimized,
+            reads=os.path.abspath(cfg.reads),
+            readmers=os.path.abspath(cfg.readmers),
+            k_mer_size=cfg.kmer_size,
+            num_threads=cfg.threads,
+            winnowmap_seq_type=cfg.seq_type,
+            deepseq_type=cfg.deepseq_type,
+            singularity_sif=cfg.singularity_sif,
+            cleanup=cfg.cleanup,
+            optimized=cfg.optimized,
             ideal_kcov=chosen_peak,
-            fitted_hist_location=getattr(args, "fitted_hist", None),
-            resume=resume,
-            resume_from=resume_from,
-            meryl_memory=meryl_memory,
-            dv_tmp_dir=dv_tmp_dir,
+            fitted_hist_location=cfg.fitted_hist,
+            resume=cfg.resume,
+            resume_from=cfg.resume_from,
+            meryl_memory=cfg.meryl_memory,
+            dv_tmp_dir=cfg.dv_tmp_dir,
         )
 
-        final_cons_name = f"{prefix}.iter_{iter_num}.consensus.fasta"
+        final_cons_name = f"{cfg.prefix}.iter_{iter_num}.consensus.fasta"
         if not os.path.exists(final_cons_name):
             shutil.copyfile(new_consensus, final_cons_name)
 
@@ -632,7 +710,13 @@ def sub_polish(args: object) -> None:  # noqa: C901
         logger.info("Saved QC summary to %s", iter_qc)
         old_consensus = os.path.abspath(final_cons_name)
 
-    # Final summary
+    _write_summaries(cfg, all_qv_records)
+
+
+def _write_summaries(
+    cfg: PolishConfig, all_qv_records: list[tuple[int, str, str]]
+) -> None:
+    """Write text and optional JSON summaries of all iterations."""
     logger.info("====== FINAL QV/COMPLETENESS SUMMARY (MERFIN + MERQURY) ======")
     for iter_num, merfin_text, merqury_text in all_qv_records:
         logger.info("Iteration %d", iter_num)
@@ -641,7 +725,7 @@ def sub_polish(args: object) -> None:  # noqa: C901
         logger.info("----- Merqury -----")
         logger.info("%s", merqury_text)
 
-    summary_file = f"{prefix}.QV_Completeness_summary.txt"
+    summary_file = f"{cfg.prefix}.QV_Completeness_summary.txt"
     with open(summary_file, "w") as fh:
         fh.write("====== FINAL QV/COMPLETENESS SUMMARY (MERFIN + MERQURY) ======\n\n")
         for iter_num, merfin_text, merqury_text in all_qv_records:
@@ -652,6 +736,30 @@ def sub_polish(args: object) -> None:  # noqa: C901
             fh.write(merqury_text + "\n")
     logger.info("Done: wrote final summary to %s", summary_file)
 
+    if cfg.json_summary:
+        from t2t_polish import __version__
 
-# T2T-Polish v4.0
+        json_records = []
+        for iter_num, merfin_text, merqury_text in all_qv_records:
+            json_records.append({
+                "iteration": iter_num,
+                "merfin": merfin_text,
+                "merqury": merqury_text,
+            })
+        json_summary = {
+            "pipeline": "T2T-Polish",
+            "version": __version__,
+            "prefix": cfg.prefix,
+            "iterations": cfg.iterations,
+            "optimized": cfg.optimized,
+            "ploidy": cfg.ploidy,
+            "records": json_records,
+        }
+        json_path = f"{cfg.prefix}.summary.json"
+        with open(json_path, "w") as jf:
+            json.dump(json_summary, jf, indent=2)
+        logger.info("JSON summary written to %s", json_path)
+
+
+# T2T-Polish v4.1
 # Any usage is subject to this software's license.

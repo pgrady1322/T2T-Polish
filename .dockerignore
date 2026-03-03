@@ -1,0 +1,16 @@
+.git/
+.github/
+.gitignore
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.egg-info/
+dist/
+build/
+htmlcov/
+tests/
+legacy/
+*.md
+*.pyc
+.pre-commit-config.yaml

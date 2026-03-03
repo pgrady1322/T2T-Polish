@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-T2T-Polish v4.0 — tests/test_evaluation.py
+T2T-Polish v4.1 — tests/test_evaluation.py
 
 Unit tests for t2t_polish.evaluation (Merfin and Merqury QV helpers).
 """
@@ -10,6 +10,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 from t2t_polish.evaluation import _read_column, run_merfin_eval, run_merqury_eval
+from t2t_polish.runner import CommandResult
 
 # ── _read_column ─────────────────────────────────────────────────────
 
@@ -33,10 +34,10 @@ class TestReadColumn:
 
 
 class TestRunMerfinEval:
-    @patch("t2t_polish.evaluation.subprocess.run")
-    def test_extracts_qv_lines(self, mock_run):
+    @patch("t2t_polish.evaluation.run_command")
+    def test_extracts_qv_lines(self, mock_rc):
         # Simulate Merfin producing QV output
-        mock_run.return_value = MagicMock(
+        mock_rc.return_value = CommandResult(
             stdout="QV: 42.3\nMean: 1.5\nOther noise\n",
             stderr="",
             returncode=0,
@@ -50,10 +51,10 @@ class TestRunMerfinEval:
         )
         assert "QV" in result or "Mean" in result
 
-    @patch("t2t_polish.evaluation.subprocess.run")
-    def test_handles_failure(self, mock_run):
-        mock_run.return_value = MagicMock(
-            stdout="", stderr="error msg", returncode=1
+    @patch("t2t_polish.evaluation.run_command")
+    def test_handles_failure(self, mock_rc):
+        mock_rc.return_value = CommandResult(
+            stdout="", stderr="error msg", returncode=1,
         )
         result = run_merfin_eval(
             "fake.fa", "fake.meryl", False, None, None
@@ -90,5 +91,5 @@ class TestRunMerquryEval:
         assert "ERROR" in result
 
 
-# T2T-Polish v4.0
+# T2T-Polish v4.1
 # Any usage is subject to this software's license.

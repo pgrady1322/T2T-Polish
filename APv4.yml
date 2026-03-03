@@ -203,3 +203,4 @@ dependencies:
   - pip:
       - pysam==0.23.0
       - pyspoa==0.2.1
+      - tqdm>=4.60

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-T2T-Polish v4.0 — tests/test_cli.py
+T2T-Polish v4.1 — tests/test_cli.py
 
-Unit tests for t2t_polish.cli (argument parsing and --version).
+Unit tests for t2t_polish.cli (argument parsing, --version, required args).
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ class TestBuildParser:
             parser.parse_args(["--version"])
         assert exc_info.value.code == 0
         captured = capsys.readouterr()
-        assert "4.0.0" in captured.out
+        assert "4.1.0" in captured.out
 
 
 # ── polish subcommand ────────────────────────────────────────────────
@@ -58,6 +58,20 @@ class TestPolishSubcommand:
             parser.parse_args(["polish", "-d", "asm.fa", "-r", "reads.fq"])
         assert exc_info.value.code != 0
 
+    def test_missing_draft_exits(self):
+        """--draft is now required; omitting it should trigger argparse exit."""
+        parser = _build_parser()
+        with pytest.raises(SystemExit) as exc_info:
+            parser.parse_args(["polish", "-r", "reads.fq", "--singularity_sif", "dv.sif"])
+        assert exc_info.value.code != 0
+
+    def test_missing_reads_exits(self):
+        """--reads is now required; omitting it should trigger argparse exit."""
+        parser = _build_parser()
+        with pytest.raises(SystemExit) as exc_info:
+            parser.parse_args(["polish", "-d", "asm.fa", "--singularity_sif", "dv.sif"])
+        assert exc_info.value.code != 0
+
 
 # ── computekcov subcommand ───────────────────────────────────────────
 
@@ -87,5 +101,5 @@ class TestDiagnosticsSubcommand:
         assert args.subcommand == "diagnostics"
 
 
-# T2T-Polish v4.0
+# T2T-Polish v4.1
 # Any usage is subject to this software's license.

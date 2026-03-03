@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-T2T-Polish v4.0 — tests/test_kcov.py
+T2T-Polish v4.1 — tests/test_kcov.py
 
 Unit tests for t2t_polish.kcov (sub_computekcov, _parse_kcov_from_params).
 """
@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 import pytest
 
+from t2t_polish.exceptions import InputValidationError
 from t2t_polish.kcov import _parse_kcov_from_params, sub_computekcov
 
 # ── _parse_kcov_from_params ──────────────────────────────────────────
@@ -35,7 +36,7 @@ class TestParseKcovFromParams:
 
 
 class TestSubComputekcov:
-    def test_missing_reads_exits(self, tmp_path):
+    def test_missing_reads_raises(self, tmp_path):
         class Args:
             reads = str(tmp_path / "nonexistent.fq")
             prefix = str(tmp_path / "out")
@@ -45,7 +46,7 @@ class TestSubComputekcov:
             ploidy = "haploid"
             jellyfish_hash_size = 100
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(InputValidationError, match="not found"):
             sub_computekcov(Args())
 
     @patch("t2t_polish.kcov.conditional_run")
@@ -82,5 +83,5 @@ class TestSubComputekcov:
         mock_crun.assert_not_called()
 
 
-# T2T-Polish v4.0
+# T2T-Polish v4.1
 # Any usage is subject to this software's license.

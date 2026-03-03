@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-T2T-Polish v4.0 — evaluation.py
+T2T-Polish v4.1 — evaluation.py
 
 QV evaluation helpers via **Merfin** (hist + completeness) and **Merqury**.
 
@@ -14,12 +14,11 @@ from __future__ import annotations
 import logging
 import os
 import re
-import subprocess
 from pathlib import Path
 from subprocess import PIPE
 
 from t2t_polish.constants import MERFIN, MERQURY_SH
-from t2t_polish.runner import conditional_run
+from t2t_polish.runner import CommandResult, conditional_run, run_command
 
 logger = logging.getLogger(__name__)
 
@@ -59,23 +58,25 @@ def run_merfin_eval(
     if optimized and fitted_hist_location:
         comp_cmd += ["-prob", fitted_hist_location]
 
-    # 1) Histogram
-    hist_proc = subprocess.run(hist_cmd, stdout=PIPE, stderr=PIPE, text=True)
-    if hist_proc.returncode != 0:
-        logger.error("[Merfin Eval] Histogram calculation failed: %s", hist_proc.stderr.strip())
+    # 1) Histogram — use run_command for consistent logging/timing
+    hist_result: CommandResult = run_command(
+        hist_cmd, description="[Merfin Eval] Histogram calculation"
+    )
+    if hist_result.returncode != 0:
+        logger.error("[Merfin Eval] Histogram calculation failed: %s", hist_result.stderr)
         hist_text = ""
     else:
-        hist_text = (hist_proc.stdout or hist_proc.stderr).strip()
+        hist_text = (hist_result.stdout or hist_result.stderr).strip()
 
     # 2) Completeness
-    comp_proc = subprocess.run(comp_cmd, stdout=PIPE, stderr=PIPE, text=True)
-    if comp_proc.returncode != 0:
-        logger.error(
-            "[Merfin Eval] Completeness calculation failed: %s", comp_proc.stderr.strip()
-        )
+    comp_result: CommandResult = run_command(
+        comp_cmd, description="[Merfin Eval] Completeness calculation"
+    )
+    if comp_result.returncode != 0:
+        logger.error("[Merfin Eval] Completeness calculation failed: %s", comp_result.stderr)
         comp_text = ""
     else:
-        comp_text = (comp_proc.stdout or comp_proc.stderr).strip()
+        comp_text = (comp_result.stdout or comp_result.stderr).strip()
 
     hist_lines = [ln for ln in hist_text.splitlines() if re.search(r"(QV|Mean)", ln)]
     comp_lines = [ln for ln in comp_text.splitlines() if re.search(r"Completeness", ln)]
@@ -137,5 +138,5 @@ def _read_column(path: str, col: int) -> str | None:
     return None
 
 
-# T2T-Polish v4.0
+# T2T-Polish v4.1
 # Any usage is subject to this software's license.
