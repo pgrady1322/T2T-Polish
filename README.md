@@ -51,13 +51,16 @@ Genome assembly accuracy is automatically assessed at each iteration using both 
 
 ## How to Run (Quick Start)
 
-**Version 4** is installed as a Python package with the `t2t-polish` CLI entry point.
+**Version 4.1.1** can now be installed via PyPI. Otherwise, it is installed via GitHub. T2T-Polish is a Python package with the `t2t-polish` CLI entry point.
 
 ### Basic Usage
 
 ```bash
 # Install from the repository
 pip install .
+
+#Install from PyPI
+pip install t2t-polish
 
 # Run diagnostics to check dependencies
 t2t-polish diagnostics
@@ -127,7 +130,7 @@ sbatch my_polish_job.sh
 
 **Docker container:**
 ```bash
-docker run -v $(pwd):/data t2t-polisher:v4 polish \
+docker run -v $(pwd):/data ghcr.io/pgrady1322/t2t-polish:latest polish \
     -d /data/draft.fasta -r /data/reads.fq \
     --singularity_sif /data/deepvariant.sif --optimized
 ```
@@ -179,41 +182,73 @@ t2t-polish polish -d draft.fasta -r reads.fq \
 
 ## Installation
 
-### Conda Environment (Most tested, recommended)
+### PyPI (Python package only)
 
-A dedicated Conda environment is highly recommended. A legacy YML file is available in `legacy/T2T_Polish_v4/APv4.yml` for reference:
+The simplest way to install the `t2t-polish` CLI and its Python dependencies:
 
 ```bash
-conda env create -f legacy/T2T_Polish_v4/APv4.yml -n t2t-auto-polisher-v4
-conda activate t2t-auto-polisher-v4
-pip install .   # Install the t2t-polish CLI entry point
+pip install t2t-polish
 ```
 
-The environment includes all necessary dependencies:
-- Core tools: Winnowmap, FalconC, Meryl, Merfin, Samtools, BCFtools
+This installs the Python package (pysam, tqdm) and the `t2t-polish` entry point. You are still responsible for installing the external bioinformatics tools listed in [Dependencies](#dependencies) (Winnowmap, Meryl, Merfin, DeepVariant, etc.) via Conda, modules, or from source.
+
+### Conda Environment (recommended for full stack)
+
+A Conda/Mamba environment is the recommended way to get **both** the Python package and all external bioinformatics dependencies in one step:
+
+```bash
+# Create environment with external tools from bioconda
+mamba create -n t2t-polish -c conda-forge -c bioconda \
+    python=3.11 meryl winnowmap samtools bcftools \
+    kmer-jellyfish genomescope2 pysam tqdm
+
+conda activate t2t-polish
+
+# Install t2t-polish CLI from PyPI (or from source with: pip install .)
+pip install t2t-polish
+
+# Verify everything is available
+t2t-polish diagnostics
+```
+
+> **Tip:** Use `mamba` instead of `conda` for much faster environment solves. Install it with `conda install -n base -c conda-forge mamba`.
+
+A legacy YML file from the v4 monolithic release is also available at `legacy/T2T_Polish_v4/APv4.yml` for reference.
+
+The environment should include:
+- Core tools: Winnowmap, Meryl, Merfin, Samtools, BCFtools, FalconC (pb-falconc)
 - K-mer analysis: Jellyfish, GenomeScope2
 - Python packages: pysam, tqdm
-- Other utilities: Merqury, Racon (for legacy support)
+- QV assessment: Merqury (merqury.sh on PATH)
 
 ### Container-Based Installation
 
 #### Docker
 
-A Dockerfile is provided for containerized deployment:
+Pre-built images are published to the GitHub Container Registry on every release:
 
 ```bash
-# Build the Docker image
-docker build -t t2t-polisher:v4 .
+# Pull the latest release image from GHCR
+docker pull ghcr.io/pgrady1322/t2t-polish:latest
+
+# Or pull a specific version
+docker pull ghcr.io/pgrady1322/t2t-polish:4.1.1
 
 # Run with Docker
 docker run -it --rm \
     -v $(pwd)/data:/data \
-    t2t-polisher:v4 polish \
+    ghcr.io/pgrady1322/t2t-polish:latest polish \
     -d /data/draft.fasta \
     -r /data/reads.fastq \
     --singularity_sif /data/deepvariant.sif \
     -o /data/AutoPolisher \
     -t 32
+```
+
+You can also build the image locally from the Dockerfile:
+
+```bash
+docker build -t t2t-polish .
 ```
 
 **Note**: The Docker container includes the t2t-polish pipeline and all dependencies except DeepVariant, which must be provided as a Singularity image.
@@ -223,12 +258,12 @@ docker run -it --rm \
 A legacy Singularity definition file is available at `legacy/T2T_Polish_v4/APv4_Singularity.def` for reference. You can adapt it or build from the Dockerfile:
 
 ```bash
-# Build a Singularity image from Docker
-singularity build t2t-polish.sif docker-daemon://t2t-polisher:v4
+# Build a Singularity image from GHCR
+singularity build t2t-polish.sif docker://ghcr.io/pgrady1322/t2t-polish:latest
 
-# Or build Docker first, then convert
-docker build -t t2t-polisher:v4 .
-singularity build t2t-polish.sif docker-daemon://t2t-polisher:v4
+# Or build from a local Docker image
+docker build -t t2t-polish .
+singularity build t2t-polish.sif docker-daemon://t2t-polish:latest
 
 # Run with Singularity
 singularity exec t2t-polish.sif t2t-polish polish \
