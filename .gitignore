@@ -17,6 +17,9 @@ build/
 .ruff_cache/
 htmlcov/
 *.xml
+.coverage
 
 # Runtime artifacts
 *.log
+*.run_parameters.json
+*.tool_versions.txt

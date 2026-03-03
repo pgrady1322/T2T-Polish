@@ -7,6 +7,8 @@ Unit tests for t2t_polish.cli (argument parsing, --version, required args).
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 
 from t2t_polish.cli import _build_parser
@@ -110,6 +112,145 @@ class TestDiagnosticsSubcommand:
         parser = _build_parser()
         args = parser.parse_args(["diagnostics"])
         assert args.subcommand == "diagnostics"
+
+
+# ── main() integration ───────────────────────────────────────────────
+
+
+class TestMain:
+    def test_no_subcommand_exits(self):
+        """main() with no subcommand prints help and exits 1."""
+        with patch("sys.argv", ["t2t-polish"]):
+            with pytest.raises(SystemExit) as exc_info:
+                from t2t_polish.cli import main
+
+                main()
+            assert exc_info.value.code == 1
+
+    def test_thread_count_zero_exits(self, tmp_path):
+        """main() exits when threads < 1."""
+        draft = tmp_path / "d.fa"
+        reads = tmp_path / "r.fq"
+        sif = tmp_path / "dv.sif"
+        for p in (draft, reads, sif):
+            p.write_text("x")
+        with patch(
+            "sys.argv",
+            [
+                "t2t-polish",
+                "polish",
+                "-d",
+                str(draft),
+                "-r",
+                str(reads),
+                "--singularity_sif",
+                str(sif),
+                "-t",
+                "0",
+            ],
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                from t2t_polish.cli import main
+
+                main()
+            assert exc_info.value.code == 1
+
+    def test_high_threads_warns(self, tmp_path):
+        """main() warns but does not exit when threads > 128."""
+        draft = tmp_path / "d.fa"
+        reads = tmp_path / "r.fq"
+        sif = tmp_path / "dv.sif"
+        for p in (draft, reads, sif):
+            p.write_text("x")
+        with (
+            patch(
+                "sys.argv",
+                [
+                    "t2t-polish",
+                    "polish",
+                    "-d",
+                    str(draft),
+                    "-r",
+                    str(reads),
+                    "--singularity_sif",
+                    str(sif),
+                    "-t",
+                    "200",
+                ],
+            ),
+            patch("t2t_polish.cli.validate_dependencies"),
+            patch("t2t_polish.cli.log_tool_versions"),
+            patch("t2t_polish.cli.sub_polish"),
+        ):
+            from t2t_polish.cli import main
+
+            main()  # Should not raise
+
+    def test_missing_input_file_exits(self, tmp_path):
+        """main() exits when --draft file does not exist."""
+        with (
+            patch(
+                "sys.argv",
+                [
+                    "t2t-polish",
+                    "polish",
+                    "-d",
+                    str(tmp_path / "nonexistent.fa"),
+                    "-r",
+                    str(tmp_path / "also_missing.fq"),
+                    "--singularity_sif",
+                    "dv.sif",
+                ],
+            ),
+            patch("t2t_polish.cli.validate_dependencies"),
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                from t2t_polish.cli import main
+
+                main()
+            assert exc_info.value.code == 1
+
+    def test_diagnostics_dispatch(self):
+        """main() dispatches to diagnostic_mode for diagnostics subcommand."""
+        with (
+            patch("sys.argv", ["t2t-polish", "diagnostics"]),
+            patch("t2t_polish.cli.diagnostic_mode") as mock_diag,
+        ):
+            from t2t_polish.cli import main
+
+            main()
+            mock_diag.assert_called_once()
+
+    def test_empty_input_file_exits(self, tmp_path):
+        """main() exits when --draft file exists but is empty."""
+        draft = tmp_path / "empty.fa"
+        reads = tmp_path / "reads.fq"
+        sif = tmp_path / "dv.sif"
+        draft.write_text("")
+        reads.write_text("data")
+        sif.write_text("data")
+        with (
+            patch(
+                "sys.argv",
+                [
+                    "t2t-polish",
+                    "polish",
+                    "-d",
+                    str(draft),
+                    "-r",
+                    str(reads),
+                    "--singularity_sif",
+                    str(sif),
+                ],
+            ),
+            patch("t2t_polish.cli.validate_dependencies"),
+            patch("t2t_polish.cli.log_tool_versions"),
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                from t2t_polish.cli import main
+
+                main()
+            assert exc_info.value.code == 1
 
 
 # T2T-Polish v4.1

@@ -82,6 +82,87 @@ class TestSubComputekcov:
         # conditional_run should NOT have been called (fast-pathed)
         mock_crun.assert_not_called()
 
+    @patch("t2t_polish.kcov.conditional_run")
+    def test_full_computation_path(self, mock_crun, tmp_path):
+        """When resume=False, all three steps run and metadata is written."""
+        from t2t_polish.runner import CommandResult
+
+        prefix = str(tmp_path / "kc")
+        reads = tmp_path / "reads.fq"
+        reads.write_text("@r\nACGT\n+\nIIII\n")
+
+        # Create the genomescope output dir so metadata can be written
+        gs_dir = tmp_path / "kc.genomescope_out"
+        gs_dir.mkdir()
+        (gs_dir / "lookup_table.txt").write_text("lookup")
+        (gs_dir / "params.txt").write_text("kcov: 92.5\n")
+
+        mock_crun.return_value = CommandResult(
+            stdout="some output kcov:92.5 done",
+            stderr="",
+            returncode=0,
+        )
+
+        _prefix = prefix
+
+        class Args:
+            reads = str(tmp_path / "reads.fq")
+            prefix = _prefix
+            resume = False
+            kmer_size = 21
+            threads = 1
+            ploidy = "haploid"
+            jellyfish_hash_size = 100
+
+        kcov, fitted = sub_computekcov(Args())
+        assert kcov == "92.5"
+        assert "lookup_table.txt" in fitted
+        # Three steps: jellyfish count, jellyfish histo, genomescope2
+        assert mock_crun.call_count == 3
+
+        # Metadata JSON should have been written
+        import json
+
+        meta_file = tmp_path / "kc.kcov.json"
+        assert meta_file.exists()
+        data = json.loads(meta_file.read_text())
+        assert data["kcov"] == "92.5"
+
+    @patch("t2t_polish.kcov.conditional_run")
+    def test_falls_back_to_params_txt(self, mock_crun, tmp_path):
+        """When stdout has no kcov, parser falls back to params.txt."""
+        from t2t_polish.runner import CommandResult
+
+        prefix = str(tmp_path / "kc")
+        reads = tmp_path / "reads.fq"
+        reads.write_text("@r\nACGT\n+\nIIII\n")
+
+        gs_dir = tmp_path / "kc.genomescope_out"
+        gs_dir.mkdir()
+        (gs_dir / "lookup_table.txt").write_text("lookup")
+        (gs_dir / "params.txt").write_text("kcov: 77.0\n")
+
+        # Stdout has no kcov pattern
+        mock_crun.return_value = CommandResult(
+            stdout="no kcov data here",
+            stderr="",
+            returncode=0,
+        )
+
+        _prefix = prefix
+
+        class Args:
+            reads = str(tmp_path / "reads.fq")
+            prefix = _prefix
+            resume = False
+            kmer_size = 21
+            threads = 1
+            ploidy = "diploid"
+            jellyfish_hash_size = 100
+
+        kcov, _ = sub_computekcov(Args())
+        assert kcov == "77.0"
+
 
 # T2T-Polish v4.1
 # Any usage is subject to this software's license.

@@ -34,8 +34,9 @@ test-cov:  ## Run tests with coverage
 
 # ── CI ───────────────────────────────────────────────────────────────
 
-ci: lint typecheck test-cov  ## Run lint + typecheck + tests (mirrors CI pipeline)
+ci: lint typecheck test-cov  ## Run full CI locally (lint + format + mypy + tests + coverage)
 	@ruff format --check t2t_polish/ tests/
+	@echo "\n\033[32m✓ All CI checks passed locally\033[0m"
 
 # ── Docker ───────────────────────────────────────────────────────────
 

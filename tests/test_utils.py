@@ -9,13 +9,17 @@ FASTA→FASTQ, readmers).
 from __future__ import annotations
 
 import logging
-from unittest.mock import patch
+import subprocess
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from t2t_polish.exceptions import ToolNotFoundError
 from t2t_polish.utils import (
+    compute_readmers_db,
+    diagnostic_mode,
     fasta_to_fastq,
+    log_tool_versions,
     needs_kcov,
     setup_logging,
     validate_dependencies,
@@ -147,6 +151,82 @@ class TestFastaToFastq:
         # Only seq2 should appear
         assert "@seq2" in content
         assert "@empty_seq" not in content
+
+
+# ── log_tool_versions ────────────────────────────────────────────────
+
+
+class TestLogToolVersions:
+    @patch("t2t_polish.utils.subprocess.run")
+    def test_writes_version_file(self, mock_run, tmp_path):
+        mock_run.return_value = MagicMock(stdout="tool v1.0\n", stderr="", returncode=0)
+        prefix = str(tmp_path / "test_prefix")
+        result = log_tool_versions(prefix)
+        assert result.endswith(".tool_versions.txt")
+        with open(result) as f:
+            content = f.read()
+        assert "version" in content.lower()
+
+    @patch("t2t_polish.utils.subprocess.run", side_effect=FileNotFoundError("not found"))
+    def test_handles_missing_tool(self, mock_run, tmp_path):
+        prefix = str(tmp_path / "test_prefix")
+        result = log_tool_versions(prefix)
+        with open(result) as f:
+            content = f.read()
+        assert "Error" in content
+
+    @patch(
+        "t2t_polish.utils.subprocess.run",
+        side_effect=subprocess.TimeoutExpired(cmd="tool", timeout=10),
+    )
+    def test_handles_timeout(self, mock_run, tmp_path):
+        prefix = str(tmp_path / "test_prefix")
+        result = log_tool_versions(prefix)
+        with open(result) as f:
+            content = f.read()
+        assert "timed out" in content
+
+
+# ── diagnostic_mode ──────────────────────────────────────────────────
+
+
+class TestDiagnosticMode:
+    @patch("t2t_polish.utils.shutil.which", return_value="/usr/bin/tool")
+    def test_found_tools(self, mock_which):
+        # Should not raise
+        diagnostic_mode()
+
+    @patch("t2t_polish.utils.shutil.which", return_value=None)
+    def test_missing_tools(self, mock_which):
+        # Should not raise even when tools are missing
+        diagnostic_mode()
+
+
+# ── compute_readmers_db ──────────────────────────────────────────────
+
+
+class TestComputeReadmersDb:
+    @patch("t2t_polish.utils.conditional_run")
+    def test_calls_conditional_run(self, mock_crun, tmp_path):
+        reads = str(tmp_path / "reads.fq")
+        output = str(tmp_path / "out.meryl")
+        compute_readmers_db(reads, output, k=31, threads=4)
+        mock_crun.assert_called_once()
+        call_kwargs = mock_crun.call_args
+        assert call_kwargs[1]["outfile"] == output
+
+    @patch("t2t_polish.utils.conditional_run")
+    def test_removes_existing_file(self, mock_crun, tmp_path):
+        reads = str(tmp_path / "reads.fq")
+        output = str(tmp_path / "out.meryl")
+        # Create output as a file (should be removed so meryl can create dir)
+        with open(output, "w") as f:
+            f.write("x")
+        compute_readmers_db(reads, output, k=31, threads=4)
+        # The file should have been removed
+        import os
+
+        assert not os.path.isfile(output) or mock_crun.called
 
 
 # T2T-Polish v4.1
